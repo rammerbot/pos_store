@@ -41,7 +41,9 @@ BASE_APPS = ['django.contrib.admin',
 
 THIRD_APPS = []
 
-LOCAL_APPS = ['applications.home',]
+LOCAL_APPS = ['applications.home',
+              'applications.inv',
+              ]
 
 
 

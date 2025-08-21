@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+{% load static %}
+{% block title %}Marcas{% endblock title %}
+
+{% block content %}
+{% include "includes/side_bar.html" %}
+    <!-- Content Wrapper -->
+    <div id="content-wrapper" class="d-flex flex-column">
+        <!-- Main Content -->
+        <div id="content align-items-center justify-content-center">
+            {% include "includes/header.html" %}
+            <!-- Begin Page Content -->
+            <div class="container-fluid">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="col-xl-10 col-md-10 mb-10">
+                        <div class="card border-left-success shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Nueva Marca</div> 
+                                        {{ form.as_p }}  
+                                        <a href="{% url 'inv:brand_list' %}" class="btn btn-danger align-right"><span class="fa fa-arrow-left"> Volver</span></a>
+                                        <button type="submit" class="btn btn-success align-right"><span class="fa fa-save"> Guardar</span></button>                       
+                                        
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    
+                </form>
+            </div>
+            <!-- /.container-fluid -->
+        </div>
+        <!-- End of Main Content -->
+        {% include "includes/footer.html" %}
+    </div>
+
+
+{% endblock content %}
