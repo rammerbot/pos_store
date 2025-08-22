@@ -1,0 +1,96 @@
+<!-- supplier_form.html -->
+<div class="modal-dialog modal-lg">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">
+                {% if supplier %}Editar{% else %}Nuevo{% endif %} Proveedor
+            </h5>
+            <button type="button" class="close" onclick="close_modal()">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        
+        <form method="post" role="form" 
+        action="{% if supplier %}{% url 'purchases:update_supplier' supplier.id %}{% else %}{% url 'purchases:create_supplier' %}{% endif %}"
+        enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            {% if form.errors %}
+            <div class="alert alert-danger">
+                <strong>Errores:</strong>
+                <ul>
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                    <li>{{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
+            <div class="modal-body">
+                <div class="card border-left-success shadow">
+                    <div class="card-body">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-3">
+                            {% if supplier %}Editar{% else %}Nuevo{% endif %} Proveedor
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        
+                        <!-- Renderizar campos manualmente -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label>{{ form.name.label }}</label>
+                                {{ form.name }}
+                                {% if form.name.errors %}
+                                <div class="text-danger small">{{ form.name.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label>{{ form.contact_person.label }}</label>
+                                {{ form.contact_person }}
+                                {% if form.contact_person.errors %}
+                                <div class="text-danger small">{{ form.contact_person.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label>{{ form.phone.label }}</label>
+                                {{ form.phone }}
+                                {% if form.phone.errors %}
+                                <div class="text-danger small">{{ form.phone.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label>{{ form.email.label }}</label>  <!-- Corregí "emain" a "email" -->
+                                {{ form.email }}
+                                {% if form.email.errors %}
+                                <div class="text-danger small">{{ form.email.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label>{{ form.address.label }}</label>
+                                {{ form.address }}
+                                {% if form.address.errors %}
+                                <div class="text-danger small">{{ form.address.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>          
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="close_modal()">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-save"></i> Guardar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

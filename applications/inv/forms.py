@@ -103,7 +103,7 @@ class ProductForm(forms.ModelForm):
         model = Product
         fields = [
                 'code', 'bar_code', 'subcategory', 'brand',
-                  'name', 'description','price', 'stock', 'unit_measure',  'status', 'last_purchase_price', 'last_buy_date'
+                  'name', 'description','price', 'stock', 'unit_measure',
                   ]
         widgets = {
             'code': forms.TextInput(attrs={'class': 'form-control ml-2', 'placeholder': 'Codigo del Producto'}),
@@ -113,13 +113,8 @@ class ProductForm(forms.ModelForm):
             'name': forms.TextInput(attrs={'class': 'form-control ml-2', 'placeholder': 'Nombre del Producto'}),
             'description': forms.TextInput(attrs={'class': 'form-control ml-2', 'placeholder': 'Descripcion del Producto'}),
             'price': forms.NumberInput(attrs={'class': 'form-control ml-2', 'placeholder': 'Precio del Producto'}),
-            'stock': forms.NumberInput(attrs={'class': 'form-control ml-2', 'placeholder': 'cantidad de Stock'}),
+            'stock': forms.NumberInput(attrs={'class': 'form-control ml-2', 'placeholder': 'cantidad de Stock', 'readonly': 'readonly', 'style': 'background-color: #e9ecef;' }),
             'unit_measure': forms.Select(attrs={'class': 'form- ml-2'}),
-            'last_purchase_price': forms.NumberInput(attrs={'class': 'form-control ml-2', 'placeholder': 'Ultimo Precio de Compra', 'readonly': 'True'}),
-            'last_buy_date' : forms.DateInput(attrs={'class': 'form-control ml-2', 'placeholder': 'Ultima Fecha de Compra', 'type': 'date', 'readonly': 'True'}),
-            'status': forms.CheckboxInput(attrs={'class': 'form-check-input ml-2'})
-
-
         }
         labels = {
             'code': 'Codigo',
@@ -131,10 +126,6 @@ class ProductForm(forms.ModelForm):
             'price': 'Precio',
             'stock': 'Cantidad en Stock',
             'unit_measure': 'Unidad de Medida',
-            'status': 'Activo',
-            'last_purchase_price': 'Ultimo Precio de Compra',
-            'last_buy_date': 'Ultima Fecha de Compra'
-
             }
     
     

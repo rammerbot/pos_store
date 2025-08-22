@@ -2,7 +2,7 @@
     <div class="modal-content">
         <div class="modal-header">
             <h5 class="modal-title">
-                {% if obj %}Editar{% else %}Nuevo{% endif %} Producto
+                {% if product %}Editar{% else %}Nuevo{% endif %} Producto
             </h5>
             <button type="button" class="close" onclick="close_modal()">
                 <span aria-hidden="true">&times;</span>
@@ -17,7 +17,7 @@
                 <div class="card border-left-success shadow">
                     <div class="card-body">
                         <div class="text-xs font-weight-bold text-success text-uppercase mb-3">
-                            {% if obj %}Editar{% else %}Nuevo{% endif %} Producto
+                            {% if product %}Editar{% else %}Nuevo{% endif %} Producto
                         </div>
                         <div class="dropdown-divider"></div>
                         
@@ -57,7 +57,6 @@
                                 {{ form.description }}
                             </div>
                         </div>
-                        
                         <div class="row">
                             <div class="col-md-4 mb-3">
                                 <label>{{ form.price.label }}</label>
@@ -72,27 +71,6 @@
                                 {{ form.unit_measure }}
                             </div>
                         </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label>{{ form.last_purchase_price.label }}</label>
-                                {{ form.last_purchase_price }}
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label>{{ form.last_buy_date.label }}</label>
-                                {{ form.last_buy_date }}
-                            </div>
-                        </div>
-                        
-      <div class="row">
-    <div class="col-md-12 mb-3">
-        <label class="modern-checkbox">
-            {{ form.status }}
-            <span class="check-icon"></span>
-            <span class="ml-3">{{ form.status.label }}</span>
-        </label>
-    </div>
-</div>
                     </div>
                 </div>
             </div>
@@ -109,50 +87,3 @@
     </div>
 </div>
 
-<style>
-.modern-checkbox {
-    display: block;
-    position: relative;
-    padding-left: 40px;
-    cursor: pointer;
-}
-
-.modern-checkbox input {
-    position: absolute;
-    opacity: 0;
-    cursor: pointer;
-}
-
-.check-icon {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 25px;
-    width: 25px;
-    border: 2px solid #ddd;
-    border-radius: 5px;
-    transition: all 0.3s;
-}
-
-.modern-checkbox input:checked ~ .check-icon {
-    background-color: #28a745;
-    border-color: #28a745;
-}
-
-.check-icon:after {
-    content: "";
-    position: absolute;
-    display: none;
-    left: 7px;
-    top: 3px;
-    width: 5px;
-    height: 10px;
-    border: solid white;
-    border-width: 0 2px 2px 0;
-    transform: rotate(45deg);
-}
-
-.modern-checkbox input:checked ~ .check-icon:after {
-    display: block;
-}
-</style>
