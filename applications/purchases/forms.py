@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Supplier
+from .models import Supplier, PurchaseOrder, PurchaseItem
 
 # Forms for Supplier
 class SupplierForm(forms.ModelForm):
@@ -21,3 +21,26 @@ class SupplierForm(forms.ModelForm):
             'email': 'Email Address',
             'address': 'Direccion',
         }
+
+
+class PurchaseForm(forms.ModelForm):
+    fbuy_date = forms.DateInput()
+    order_date = forms.DateInput()
+    
+    class Meta:
+        model=PurchaseOrder
+        fields=['supplier', 'buy_date', 'observations', 'order_number', 
+            'order_date', 'subtotal', 'discount', 'total_amount']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in iter(self.fields):
+            self.fields[field].widget.attrs.update({
+                'class': 'form-control'
+            })
+        self.fields['buy_date'].widget.attrs['readonly'] = True
+        self.fields['order_date'].widget.attrs['readonly'] = True
+        self.fields['subtotal'].widget.attrs['readonly'] = True
+        self.fields['discount'].widget.attrs['readonly'] = True
+        self.fields['total_amount'].widget.attrs['readonly'] = True
+

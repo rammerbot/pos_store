@@ -23,21 +23,6 @@
                                                 <div class="text-center">
                                                     <h1 class="h4 text-gray-900 mb-4">Welcome Back!</h1>
                                                 </div>
-                                                <small class="text-danger">
-                                                    {% if form.errors %}
-                                                        {% for field in form %}
-                                                            {% for error in field.errors %}
-                                                                <strong>{{ error|escape }}</strong>
-                                                            {% endfor %}
-                                                        {% endfor %}
-                                                    {% endif %}
-
-                                                    {% if form.non_field_errors %}
-                                                        {% for field in form.non_field_errors %}
-                                                                <strong>{{ error|escape }}</strong>
-                                                        {% endfor %}
-                                                    {% endif %}
-                                                </small>
                                                 <form class="user" method="POST">
                                                     {% csrf_token %}
                                                     {% if form.non_field_errors %}
@@ -74,5 +59,22 @@
     {% include "includes/footer.html" %}
 {% endblock content %}
 
-   
+{% block JavaScript %}
+<script>
+    {% if form.errors %}
+        {% for field in form %}
+            {% for error in field.errors %}   
+                message("{{ error|escape }}", 'red');
+            {% endfor %}
+        {% endfor %}
+    {% endif %}
+
+    {% if form.non_field_errors %}
+        {% for field in form.non_field_errors %}
+                message("{{ error|escape }}", 'red');
+        {% endfor %}
+    {% endif %}
+</script>    
+
+{% endblock JavaScript %}
         

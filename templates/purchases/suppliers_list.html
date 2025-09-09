@@ -42,6 +42,7 @@
                                         <th scope="col">Telfono</th>
                                         <th scope="col">Correo</th>                                     
                                         <th scope="col">Direccion</th>
+                                        <th scope="col">Estado</th>
                                         <th scope="col">Acciones</th>
                                     </tr>
                                 </thead>
@@ -56,12 +57,17 @@
                                         <td>{{ supplier.address |default:"-"}}</td>
                                         <td>{% if supplier.status %}Activa{% else %}Inactiva{% endif %}</td>
                                         <td>
-                                            <a class="btn btn-warning toggle-status" onclick="return open_modal('{% url 'purchases:update_supplier' supplier.id %}')" href="#"><i class="fas fa-edit"></i>  Editar</a>
+                                            <!-- Botón Editar - clase diferente -->
+                                            <a class="btn btn-warning btn-edit" onclick="return open_modal('{% url 'purchases:update_supplier' supplier.id %}')" href="#">
+                                                <i class="fas fa-edit"></i> Editar
+                                            </a>
                                             
+                                            <!-- Botón Activar/Desactivar - mantiene toggle-status -->
                                             <button class="btn btn-{% if supplier.status %}danger{% else %}success{% endif %} toggle-status" 
-                                            data-category-id="{{ supplier.id}}">
-                                            {% if supplier.status %}<i class="fas fa-ban"></i>  Desactivar{% else %}<i class="fas fa-check"></i>  Activar{% endif %}
-                                        </button></td>
+                                                    data-supplier-id="{{ supplier.id}}">
+                                                {% if supplier.status %}<i class="fas fa-ban"></i> Desactivar{% else %}<i class="fas fa-check"></i> Activar{% endif %}
+                                            </button>
+                                        </td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
@@ -76,19 +82,28 @@
         {% include "includes/footer.html" %}
 
         <!-- Modal de Confirmación -->
-        <div class="modal fade" id="confirmToggleModal" tabindex="-1" role="dialog" aria-hidden="true">
-            <div class="modal-dialog" role="document">
+        <div class="modal fade" id="confirmToggleModal" tabindex="-1" aria-labelledby="confirmToggleModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
                 <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Confirmar acción</h5>
+                    <div class="modal-header border-left-0">
+                        <h5 class="modal-title" id="confirmToggleModalLabel">Confirmar acción</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
-                    <div class="modal-body">
-                        ¿Estás seguro que deseas <span id="actionText"></span> este Proveedor?
+                    <div class="modal-body p-0">
+                        <!-- Contenedor principal con borde izquierdo -->
+                        <div class="border-left-0" id="modalBorderContainer">
+                            <div class="p-3">
+                                <p class="mb-0">
+                                    <span id="actionIcon"></span>
+                                    ¿Estás seguro de que deseas <span id="actionText"></span> el proveedor 
+                                    <span id="categoryNameText" class="text-primary fw-bold"></span>?
+                                </p>
+                            </div>
+                        </div>
                     </div>
-                    <div class="modal-footer">
+                    <div class="modal-footer border-left-0">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
                         <button type="button" class="btn btn-primary" id="confirmToggleBtn">Confirmar</button>
                     </div>
@@ -97,32 +112,62 @@
         </div>
     </div>
 
-
 {% block modal %}
 <div class="modal fade" id="supplier" >
 </div>
 {% endblock modal %}
 
 {% endblock content %}
+
 {% block JavaScript %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const buttons = document.querySelectorAll('.toggle-status');
+    // Solo seleccionar botones de toggle-status (activar/desactivar)
+    const toggleButtons = document.querySelectorAll('button.toggle-status');
     const confirmModal = new bootstrap.Modal(document.getElementById('confirmToggleModal'));
+    const modalBorderContainer = document.getElementById('modalBorderContainer');
+    const actionIcon = document.getElementById('actionIcon');
+    
     let currentCategoryId = null;
     let currentButton = null;
     let currentRow = null;
+    let currentCategoryName = null;
     
-    buttons.forEach(button => {
-        button.addEventListener('click', function() {
-            currentCategoryId = this.getAttribute('data-category-id');
-            currentButton = this;
-            currentRow = this.closest('tr'); // Obtenemos la fila completa
-            const currentAction = this.textContent.trim();
-            const action = currentAction === 'Desactivar' ? 'deshabilitar' : 'habilitar';
+    // Event listener solo para botones de toggle-status
+    toggleButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.stopPropagation(); // Prevenir propagación del evento
             
-            // Configurar el modal
-            document.getElementById('actionText').textContent = action;
+            currentCategoryId = this.getAttribute('data-supplier-id');
+            currentButton = this;
+            currentRow = this.closest('tr');
+            
+            // Obtener el nombre del proveedor desde la tabla
+            const nameCell = currentRow.querySelector('td:nth-child(2)');
+            currentCategoryName = nameCell.textContent.trim();
+            
+            const currentAction = this.textContent.trim();
+            const isActivating = currentAction === 'Activar';
+            
+            // Configurar el modal con el nombre del proveedor
+            document.getElementById('actionText').textContent = isActivating ? 'activar' : 'desactivar';
+            document.getElementById('categoryNameText').textContent = currentCategoryName;
+            
+            // Configurar estilos según la acción
+            if (isActivating) {
+                // Estilos para activar ✅
+                modalBorderContainer.classList.remove('border-left-warning');
+                modalBorderContainer.classList.add('border-left-success');
+                modalBorderContainer.style.borderLeftWidth = '4px';
+                actionIcon.innerHTML = '✅ ';
+            } else {
+                // Estilos para desactivar 🚫
+                modalBorderContainer.classList.remove('border-left-success');
+                modalBorderContainer.classList.add('border-left-warning');
+                modalBorderContainer.style.borderLeftWidth = '4px';
+                actionIcon.innerHTML = '🚫 ';
+            }
+            
             confirmModal.show();
         });
     });
@@ -130,6 +175,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Manejar la confirmación
     document.getElementById('confirmToggleBtn').addEventListener('click', function() {
         confirmModal.hide();
+        
+        // Restablecer estilos del modal
+        modalBorderContainer.classList.remove('border-left-success', 'border-left-warning');
+        modalBorderContainer.style.borderLeftWidth = '0';
+        actionIcon.innerHTML = '';
         
         // Mostrar indicador de carga
         currentButton.disabled = true;
@@ -148,32 +198,47 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Actualizar el estado en la tabla
-                const statusCell = currentRow.querySelector('td:nth-child(4)');
+                // Actualizar el estado en la tabla (columna 7 - Estado)
+                const statusCell = currentRow.querySelector('td:nth-child(7)');
                 statusCell.textContent = data.new_status ? 'Activa' : 'Inactiva';
                 
                 // Actualizar el botón
                 if (data.new_status) {
                     currentButton.classList.remove('btn-success');
                     currentButton.classList.add('btn-danger');
-                    currentButton.innerHTML = '{% autoescape off %}<i class="fas fa-ban"></i> Desactivar{% endautoescape %}';
+                    currentButton.innerHTML = '<i class="fas fa-ban"></i> Desactivar';
+                    // Mostrar mensaje de éxito para activación con nombre
+                    message(`✅ El proveedor "<strong>${data.supplier_name}</strong>" ha sido activado exitosamente`, 'green');
                 } else {
                     currentButton.classList.remove('btn-danger');
                     currentButton.classList.add('btn-success');
-                    currentButton.innerHTML = '{% autoescape off %}<i class="fas fa-check"></i> Activar{% endautoescape %}';
+                    currentButton.innerHTML = '<i class="fas fa-check"></i> Activar';
+                    // Mostrar mensaje de éxito para desactivación con nombre
+                    message(`🚫 El proveedor "<strong>${data.supplier_name}</strong>" ha sido desactivado exitosamente`, 'orange');
                 }
+            } else {
+                // Mostrar mensaje de error
+                message('❌ Error: ' + (data.error || 'No se pudo cambiar el estado'), 'red');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Ocurrió un error al cambiar el estado');
+            message('❌ Ocurrió un error al cambiar el estado', 'red');
         })
         .finally(() => {
             currentButton.disabled = false;
         });
     });
+    
+    // Limpiar estilos cuando se cierra el modal
+    document.getElementById('confirmToggleModal').addEventListener('hidden.bs.modal', function () {
+        modalBorderContainer.classList.remove('border-left-success', 'border-left-warning');
+        modalBorderContainer.style.borderLeftWidth = '0';
+        actionIcon.innerHTML = '';
+    });
 });
 </script>
+
 <script>
   // Call the dataTables jQuery plugin
   $(document).ready(function() {
@@ -226,6 +291,7 @@ function open_modal(url) {
             e.preventDefault();
             var form = $(this);
             var formData = new FormData(this);
+            var supplierName = form.find('#id_name').val(); // Obtener el nombre del proveedor
             
             // Mostrar loading
             form.find('button[type="submit"]').prop('disabled', true)
@@ -244,7 +310,14 @@ function open_modal(url) {
                 success: function(response) {
                     if (response.success) {
                         $('#supplier').modal('hide');
-                        showAlert('success', response.message);
+                        
+                        // Mensaje personalizado con el nombre del proveedor
+                        var action = url.includes('update') ? 'actualizado' : 'creado';
+                        var messageText = `✅ El proveedor <strong>"${supplierName}"</strong> ha sido ${action} exitosamente`;
+                        
+                        message(messageText, 'green');
+                        
+                        // Recargar después de 1.5 segundos
                         setTimeout(function() {
                             location.reload();
                         }, 1500);
@@ -255,7 +328,8 @@ function open_modal(url) {
                     }
                 },
                 error: function(xhr, status, error) {
-                    showAlert('error', 'Error al procesar la solicitud: ' + error);
+                    var errorMessage = 'Error al procesar la solicitud: ' + error;
+                    message(`❌ ${errorMessage}`, 'red');
                 },
                 complete: function() {
                     form.find('button[type="submit"]').prop('disabled', false)
@@ -286,15 +360,17 @@ function getCookie(name) {
     return cookieValue;
 }
 
-// Función para mostrar alertas bonitas
-function showAlert(type, message) {
-    // Puedes usar Toastr, SweetAlert o alertas de Bootstrap aquí
-    alert(message); // Simple por ahora
-}
-
 function close_modal() {
     $('#supplier').modal('hide');
     return false;
 }
+</script>
+
+<script>
+    {% if messages %}  
+        {% for message in messages %}
+            message("{{ message }}", 'green')
+        {% endfor %}
+    {% endif %}
 </script>
 {% endblock JavaScript %}

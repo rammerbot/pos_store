@@ -11,7 +11,6 @@
             {% include "includes/header.html" %}
             <!-- Begin Page Content -->
             <div class="container-fluid">
-                
                 <!-- Dropdown Card Example -->
                 <div class="card shadow mb-4">
                     <!-- Card Header - Dropdown -->
@@ -70,19 +69,28 @@
         {% include "includes/footer.html" %}
 
         <!-- Modal de Confirmación -->
-        <div class="modal fade" id="confirmToggleModal" tabindex="-1" role="dialog" aria-hidden="true">
-            <div class="modal-dialog" role="document">
+        <div class="modal fade" id="confirmToggleModal" tabindex="-1" aria-labelledby="confirmToggleModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
                 <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Confirmar acción</h5>
+                    <div class="modal-header border-left-0">
+                        <h5 class="modal-title" id="confirmToggleModalLabel">Confirmar acción</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
-                    <div class="modal-body">
-                        ¿Estás seguro que deseas <span id="actionText"></span> esta categoría?
+                    <div class="modal-body p-0">
+                        <!-- Contenedor principal con borde izquierdo -->
+                        <div class="border-left-0" id="modalBorderContainer">
+                            <div class="p-3">
+                                <p class="mb-0">
+                                    <span id="actionIcon"></span>
+                                    ¿Estás seguro de que deseas <span id="actionText"></span> la categoría 
+                                    <span id="categoryNameText" class="text-primary fw-bold"></span>?
+                                </p>
+                            </div>
+                        </div>
                     </div>
-                    <div class="modal-footer">
+                    <div class="modal-footer border-left-0">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
                         <button type="button" class="btn btn-primary" id="confirmToggleBtn">Confirmar</button>
                     </div>
@@ -98,20 +106,46 @@
 document.addEventListener('DOMContentLoaded', function() {
     const buttons = document.querySelectorAll('.toggle-status');
     const confirmModal = new bootstrap.Modal(document.getElementById('confirmToggleModal'));
+    const modalBorderContainer = document.getElementById('modalBorderContainer');
+    const actionIcon = document.getElementById('actionIcon');
+    
     let currentCategoryId = null;
     let currentButton = null;
     let currentRow = null;
+    let currentCategoryName = null;
     
     buttons.forEach(button => {
         button.addEventListener('click', function() {
             currentCategoryId = this.getAttribute('data-category-id');
             currentButton = this;
-            currentRow = this.closest('tr'); // Obtenemos la fila completa
-            const currentAction = this.textContent.trim();
-            const action = currentAction === 'Desactivar' ? 'deshabilitar' : 'habilitar';
+            currentRow = this.closest('tr');
             
-            // Configurar el modal
-            document.getElementById('actionText').textContent = action;
+            // Obtener el nombre de la categoría desde la tabla
+            const nameCell = currentRow.querySelector('td:nth-child(2)');
+            currentCategoryName = nameCell.textContent.trim();
+            
+            const currentAction = this.textContent.trim();
+            const isActivating = currentAction === 'Activar';
+            
+            // Configurar el modal con el nombre de la categoría
+            document.getElementById('actionText').textContent = isActivating ? 'activar' : 'desactivar';
+            document.getElementById('categoryNameText').textContent = currentCategoryName;
+            
+            // Configurar estilos según la acción
+            if (isActivating) {
+                // Estilos para activar ✅
+                modalBorderContainer.classList.remove('border-left-warning');
+                modalBorderContainer.classList.add('border-left-success');
+                modalBorderContainer.style.borderLeftWidth = '4px';
+                actionIcon.innerHTML = '✅ ';
+            } else {
+                // Estilos para desactivar 🚫
+                modalBorderContainer.classList.remove('border-left-success');
+                modalBorderContainer.classList.add('border-left-warning');
+                modalBorderContainer.style.borderLeftWidth = '4px';
+                actionIcon.innerHTML = '🚫 ';
+            }
+            
             confirmModal.show();
         });
     });
@@ -119,6 +153,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Manejar la confirmación
     document.getElementById('confirmToggleBtn').addEventListener('click', function() {
         confirmModal.hide();
+        
+        // Restablecer estilos del modal
+        modalBorderContainer.classList.remove('border-left-success', 'border-left-warning');
+        modalBorderContainer.style.borderLeftWidth = '0';
+        actionIcon.innerHTML = '';
         
         // Mostrar indicador de carga
         currentButton.disabled = true;
@@ -146,20 +185,34 @@ document.addEventListener('DOMContentLoaded', function() {
                     currentButton.classList.remove('btn-success');
                     currentButton.classList.add('btn-danger');
                     currentButton.innerHTML = '{% autoescape off %}<i class="fas fa-ban"></i> Desactivar{% endautoescape %}';
+                    // Mostrar mensaje de éxito para activación con nombre
+                    message(`✅ La Categoría "<strong>${data.category_name}</strong>" ha sido activada exitosamente`, 'green');
                 } else {
                     currentButton.classList.remove('btn-danger');
                     currentButton.classList.add('btn-success');
                     currentButton.innerHTML = '{% autoescape off %}<i class="fas fa-check"></i> Activar{% endautoescape %}';
+                    // Mostrar mensaje de éxito para desactivación con nombre
+                    message(`🚫 La Categoría "<strong>${data.category_name}</strong>" ha sido desactivada exitosamente`, 'orange');
                 }
+            } else {
+                // Mostrar mensaje de error
+                message('❌ Error: ' + (data.error || 'No se pudo cambiar el estado'), 'red');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Ocurrió un error al cambiar el estado');
+            message('❌ Ocurrió un error al cambiar el estado', 'red');
         })
         .finally(() => {
             currentButton.disabled = false;
         });
+    });
+    
+    // Limpiar estilos cuando se cierra el modal
+    document.getElementById('confirmToggleModal').addEventListener('hidden.bs.modal', function () {
+        modalBorderContainer.classList.remove('border-left-success', 'border-left-warning');
+        modalBorderContainer.style.borderLeftWidth = '0';
+        actionIcon.innerHTML = '';
     });
 });
 </script>
@@ -199,5 +252,18 @@ document.addEventListener('DOMContentLoaded', function() {
  
     );
   });
+</script>
+
+<script>
+    {% if messages %}
+        
+    {% for message in messages %}
+    
+        message("{{ message }}", 'green')
+        
+    
+    {% endfor %}
+
+{% endif %}
 </script>
 {% endblock JavaScript %}

@@ -84,6 +84,11 @@ class UnitMeasure(BaseModel):
         self.name = self.name.upper()
         return super(UnitMeasure, self).save()
 
+    def toggle_status(self):
+        self.status = not self.status
+        self.save()
+        return self.status
+    
 class Product(BaseModel):
     code = models.CharField("Codigo", max_length=50, unique=True)
     bar_code = models.CharField("Codigo de Barras", max_length=50, blank=True, unique=True, null=True)

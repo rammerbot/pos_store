@@ -57,6 +57,17 @@
 
   <script src="{% static 'vendor/jquery_confirm/jquery-confirm.min.js' %}"></script>
 
+  <script>
+    function message(msg, color='green')
+    {
+      $.alert({
+        title:'',
+        type: color,
+        content: msg
+      })
+    }
+  </script>
+
   {% block JavaScript %}
   {% endblock JavaScript %}
   {% block modal %}
