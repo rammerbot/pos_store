@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Factura de Compra - {{ obj.0.order_number }}</title>
+    <style type="text/css">
+        @page {
+            size: letter;
+            margin: 1.5cm 1cm;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #333;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #2c3e50;
+        }
+        
+        .company-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        
+        .report-title {
+            font-size: 16px;
+            color: #7f8c8d;
+            margin-bottom: 10px;
+        }
+        
+        .report-date {
+            font-size: 12px;
+            color: #95a5a6;
+        }
+        
+        .info-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .info-card {
+            padding: 15px;
+            border: 1px solid #ecf0f1;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+        }
+        
+        .info-card h3 {
+            margin-top: 0;
+            color: #2c3e50;
+            border-bottom: 1px solid #bdc3c7;
+            padding-bottom: 8px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #34495e;
+        }
+        
+        .info-value {
+            color: #2c3e50;
+        }
+        
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .table th {
+            background-color: #34495e;
+            color: white;
+            padding: 12px 10px;
+            text-align: left;
+            font-weight: bold;
+        }
+        
+        .table td {
+            padding-bottom: 5px;
+            
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        .table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        .amount {
+            text-align: right;
+            font-weight: bold;
+        }
+        
+        .summary {
+            margin-top: 25px;
+            padding: 20px;
+            background-color: #e8f4f8;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #bdc3c7;
+        }
+        
+        .summary-total {
+            font-size: 14px;
+            font-weight: bold;
+            color: #2c3e50;
+            border-bottom: none;
+            border-top: 2px solid #2c3e50;
+            padding-top: 10px;
+            margin-top: 5px;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 10px;
+            color: #7f8c8d;
+            border-top: 1px solid #bdc3c7;
+            padding-top: 10px;
+        }
+        
+        @media print {
+            .table td {
+                padding: 8px 6px;
+            }
+            
+            .summary {
+                background-color: #e8f4f8 !important;
+                -webkit-print-color-adjust: exact;
+            }
+            
+            .table th {
+                background-color: #34495e !important;
+                -webkit-print-color-adjust: exact;
+                color: white !important;
+            }
+            
+            .info-card {
+                background-color: #f8f9fa !important;
+                -webkit-print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="company-name">Sistema de Compras</div>
+        <div class="report-title">Factura de Compra</div>
+        <div class="report-date">Generado el: {{ today|date:"d/m/Y H:i" }}</div>
+    </div>
+    
+    <div class="info-section">
+        <div class="info-card">
+            <h3>Información del Proveedor</h3>
+            <div class="info-row">
+                <span class="info-label">Proveedor:</span>
+                <span class="info-value">{{ obj.0.supplier.name }}</span>
+            </div>
+            {% if obj.0.supplier.contact_person %}
+            <div class="info-row">
+                <span class="info-label">Contacto:</span>
+                <span class="info-value">{{ obj.0.supplier.contact_person }}</span>
+            </div>
+            {% endif %}
+            {% if obj.0.supplier.phone %}
+            <div class="info-row">
+                <span class="info-label">Teléfono:</span>
+                <span class="info-value">{{ obj.0.supplier.phone }}</span>
+            </div>
+            {% endif %}
+            {% if obj.0.supplier.email %}
+            <div class="info-row">
+                <span class="info-label">Email:</span>
+                <span class="info-value">{{ obj.0.supplier.email }}</span>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="info-card">
+            <h3>Información de la Factura</h3>
+            <div class="info-row">
+                <span class="info-label">No. Factura:</span>
+                <span class="info-value">{{ obj.0.order_number }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Fecha de Factura:</span>
+                <span class="info-value">{{ obj.0.order_date|date:"d/m/Y" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Fecha de Compra:</span>
+                <span class="info-value">{{ obj.0.buy_date|date:"d/m/Y" }}</span>
+            </div>
+            {% if obj.0.observations %}
+            <div class="info-row">
+                <span class="info-label">Descripción:</span>
+                <span class="info-value">{{ obj.0.observations }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Tabla de Items Detallados -->
+    <h3>Detalle de Productos</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th>Precio Unitario</th>
+                <th>Subtotal</th>
+                <th>Descuento</th>
+                <th>IVA</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.product.name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td class="amount">${{ item.unit_price }}</td>
+                <td class="amount">${{ item.subtotal }}</td>
+                <td class="amount">${{ item.discount }}</td>
+                <td class="amount">${{ item.tax }}</td>
+                <td class="amount">${{ item.total_price }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <!-- Resumen Financiero -->
+    <div class="summary">
+        <h3>Resumen Financiero</h3>
+        <div class="summary-row">
+            <span>Subtotal:</span>
+            <span class="amount">${{ subtotal_general|default:"0.00" }}</span>
+        </div>
+        <div class="summary-row">
+            <span>Descuento General:</span>
+            <span class="amount">${{ discount_general|default:"0.00" }}</span>
+        </div>
+        <div class="summary-row">
+            <span>IVA General:</span>
+            <span class="amount">${{ tax_general|default:"0.00" }}</span>
+        </div>
+        <div class="summary-row summary-total">
+            <span>TOTAL:</span>
+            <span class="amount">${{ total_general|default:"0.00" }}</span>
+        </div>
+    </div>
+    
+    <div class="footer">
+        Documento generado automáticamente por el Sistema de Compras | 
+        Página <span class="pageNumber"></span> de <span class="totalPages"></span>
+    </div>
+</body>
+</html>

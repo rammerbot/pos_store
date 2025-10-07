@@ -1,7 +1,11 @@
 from django.db import models
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
+from django.db.models import Sum
 
 from applications.home.models import BaseModel
 from applications.inv.models import Product
+
 
 # Create your models here.
 
@@ -34,8 +38,8 @@ class PurchaseOrder(BaseModel):
         order_number = models.CharField(max_length=100, verbose_name='Numero de Orden', unique=True)
         buy_date = models.DateField(verbose_name='Fecha de Compra')
         subtotal = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Subtotal', default=0.00)
-        discount = models.DecimalField(max_digits=5, decimal_places=2, verbose_name='Descuento', default=0.00)
-        tax = models.DecimalField(max_digits=5, decimal_places=2, verbose_name='Impuesto', default=0.00)
+        discount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Descuento', default=0.00)
+        tax = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Impuesto', default=0.00)
         supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, verbose_name='Proveedor')
         
         total_amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Monto Total')
@@ -49,7 +53,7 @@ class PurchaseOrder(BaseModel):
 
         def save(self):
             self.order_number = self.order_number.upper()
-            self.total_amount = self.subtotal - self.discount - self.tax
+            self.total_amount = self.subtotal - self.discount + self.tax
             return super(PurchaseOrder, self).save()
 
         def toggle_status(self):
@@ -63,8 +67,8 @@ class PurchaseItem(BaseModel):
     quantity = models.PositiveIntegerField(verbose_name='Cantidad', default=1)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Precio Unitario')
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Subtotal', default=0.00)
-    tax = models.DecimalField(max_digits=5, decimal_places=2, verbose_name='Impuesto', default=0.00)
-    discount = models.DecimalField(max_digits=5, decimal_places=2, verbose_name='Descuento', default=0.00)
+    tax = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Impuesto', default=0.00)
+    discount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Descuento', default=0.00)
     total_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Precio Total')
     cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Costo', default=0.00)
 
@@ -76,8 +80,39 @@ class PurchaseItem(BaseModel):
         return f"{self.product} - {self.purchase_order.order_number}"
 
     def save(self):
-        self.product_name = self.product_name.upper()
-        self.subtotal = self.quantity * self.unit_price
-        self.total_price = self.subtotal - self.discount + self.tax
-        self.total_price = self.quantity * self.unit_price
+        self.subtotal = float(self.quantity) * float(self.unit_price)
+        self.total_price = self.subtotal - float(self.discount) + float(self.tax)
         return super(PurchaseItem, self).save()
+    
+@receiver(post_delete, sender=PurchaseItem)
+def update_purchase_oder_delete(sender, instance, **kwargs):
+    id_product = instance.product.id
+    id_purchase = instance.purchase_order.id
+
+    header = PurchaseItem.objects.filter(pk=id_purchase).first()
+    if header:
+            sub_total = PurchaseItem.objects.filter(purchase_order=id_purchase).aggregate(Sum('subtotal'))
+            discount = PurchaseItem.objects.filter(purchase_order=id_purchase).aggregate(Sum('discount'))
+            tax = PurchaseItem.objects.filter(purchase_order=id_purchase).aggregate(Sum('tax'))
+            header.subtotal = sub_total["subtotal__sum"]
+            header.discount = discount["discount__sum"]
+            header.tax = tax["tax__sum"]
+            header.save()
+    
+    product = Product.objects.filter(pk=id_product).first()
+    if product:
+        quantity = int(product.stock) - int(instance.quantity)
+        product.stock = quantity
+        product.save()
+
+@receiver(post_save, sender=PurchaseItem)
+def update_purchase_oder_save(sender, instance, created, **kwargs):
+    id_product = instance.product.id
+    buy_date = instance.purchase_order.buy_date
+    
+    product = Product.objects.filter(pk=id_product).first()
+    if product:
+        quantity = int(product.stock) + int(instance.quantity)
+        product.stock = quantity
+        product.last_buy_date = buy_date
+        product.save()

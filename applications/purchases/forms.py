@@ -24,13 +24,13 @@ class SupplierForm(forms.ModelForm):
 
 
 class PurchaseForm(forms.ModelForm):
-    fbuy_date = forms.DateInput()
+    buy_date = forms.DateInput()
     order_date = forms.DateInput()
     
     class Meta:
         model=PurchaseOrder
         fields=['supplier', 'buy_date', 'observations', 'order_number', 
-            'order_date', 'subtotal', 'discount', 'total_amount']
+            'order_date', 'subtotal', 'discount', 'tax', 'total_amount']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -42,5 +42,6 @@ class PurchaseForm(forms.ModelForm):
         self.fields['order_date'].widget.attrs['readonly'] = True
         self.fields['subtotal'].widget.attrs['readonly'] = True
         self.fields['discount'].widget.attrs['readonly'] = True
+        self.fields['tax'].widget.attrs['readonly'] = True
         self.fields['total_amount'].widget.attrs['readonly'] = True
 

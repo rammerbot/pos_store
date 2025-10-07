@@ -1,9 +1,6 @@
-
-
-
 {% extends "layout.html" %}
 {% load static %}
-{% block title %}Productos{% endblock title %}
+{% block title %}Usuarios{% endblock title %}
 
 {% block content %}
 {% include "includes/side_bar.html" %}
@@ -14,21 +11,20 @@
             {% include "includes/header.html" %}
             <!-- Begin Page Content -->
             <div class="container-fluid">
-                
-                <!-- Dropdown Card Example -->
+                <!-- Dropdown Card  -->
                 <div class="card shadow mb-4">
                     <!-- Card Header - Dropdown -->
                     <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                        <h6 class="m-0 font-weight-bold text-primary">Lista de Productos</h6>
+                        <h6 class="m-0 font-weight-bold text-primary">Lista de Usuarios</h6>
                         <div class="dropdown no-arrow">
-                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
-                            <div class="dropdown-header">Agregar Usuario:</div>
-                            <a class="dropdown-item" onclick="return open_modal('{% url 'home:create_user' %}')" href="#"><i class="fas fa-plus"></i> Nuevo Usuario</a>
-                            <div class="dropdown-divider"></div>
-                        </div>
+                            <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+                                <div class="dropdown-header">Agregar Usuario:</div>
+                                <a class="dropdown-item" onclick="return open_modal('{% url 'home:create_user' %}')" href="#"><i class="fas fa-plus"></i> Nuevo Usuario</a>
+                                <div class="dropdown-divider"></div>
+                            </div>
                         </div>
                     </div>
                     <!-- Card Body -->
@@ -46,31 +42,31 @@
                             </thead>
                             <tbody>
                                {% for usuario in users %}  <!-- Cambia 'user' por 'usuario' -->
-<tr>
-    <td>{{ usuario.username }}</td>
-    <td>{{ usuario.get_full_name }}</td>
-    <td>{{ usuario.email }}</td>
-    <td>
-        {% for group in usuario.groups.all %}
-        <span class="badge badge-primary">{{ group.name }}</span>
-        {% endfor %}
-    </td>
-    <td>
-        <span class="badge badge-{% if usuario.is_active %}success{% else %}danger{% endif %}">
-            {% if usuario.is_active %}Activo{% else %}Inactivo{% endif %}
-        </span>
-    </td>
-    <td>
-        <a class="btn btn-warning btn-edit" onclick="return open_modal('{% url 'home:update_user' usuario.id %}')" href="#">
-            <i class="fas fa-edit"></i> Editar
-        </a>
-        <button class="btn btn-{% if usuario.is_active %}danger{% else %}success{% endif %} toggle-status" 
-                data-user-id="{{ usuario.id }}">
-            {% if usuario.is_active %}<i class="fas fa-ban"></i> Desactivar{% else %}<i class="fas fa-check"></i> Activar{% endif %}
-        </button>
-    </td>
-</tr>
-{% endfor %}
+                                <tr>
+                                    <td>{{ usuario.username }}</td>
+                                    <td>{{ usuario.get_full_name }}</td>
+                                    <td>{{ usuario.email }}</td>
+                                    <td>
+                                        {% for group in usuario.groups.all %}
+                                        <span class="badge badge-primary">{{ group.name }}</span>
+                                        {% endfor %}
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-{% if usuario.is_active %}success{% else %}danger{% endif %}">
+                                            {% if usuario.is_active %}Activo{% else %}Inactivo{% endif %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a class="btn btn-warning btn-edit" onclick="return open_modal('{% url 'home:update_user' usuario.id %}')" href="#">
+                                            <i class="fas fa-edit"></i> Editar
+                                        </a>
+                                        <button class="btn btn-{% if usuario.is_active %}danger{% else %}success{% endif %} toggle-status" 
+                                                data-user-id="{{ usuario.id }}">
+                                            {% if usuario.is_active %}<i class="fas fa-ban"></i> Desactivar{% else %}<i class="fas fa-check"></i> Activar{% endif %}
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
                             </tbody>
                         </table>
                     </div>
@@ -113,10 +109,10 @@
     </div>
 
 
-{% block modal %}
-<div class="modal fade" id="popup" >
-</div>
-{% endblock modal %}
+    {% block modal %}
+    <div class="modal fade" id="popup" >
+    </div>
+    {% endblock modal %}
 
 {% endblock content %}
 {% block JavaScript %}

@@ -1,92 +1,126 @@
-{% extends 'layout.html' %}
+{% extends "layout.html" %}
+{% load static %}
+{% block title %}Compras{% endblock title %}
 
 {% block content %}
-<div class="card shadow mb-4">
-  <!-- Card Header - Dropdown -->
-  <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-    <h6 class="m-0 font-weight-bold text-primary">Listado de Proveedor</h6>
-    <div class="dropdown no-arrow">
-      <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
-      </a>
-      <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
-        <div class="dropdown-header">Acciones:</div>
-        <a class="dropdown-item" href="{% url 'purchases:purchase_create' %}"><i class="far fa-calendar-plus"></i> Nueva</a>
-        
+{% include "includes/side_bar.html" %}
+    <!-- Content Wrapper -->
+<div id="content-wrapper" class="d-flex flex-column">
+  <!-- Main Content -->
+  <div id="content">
+    {% include "includes/header.html" %}
+    <!-- Begin Page Content -->
+    <div class="container-fluid">
+      <!-- Dropdown Card  -->
+      <div class="card shadow mb-4">
+        <!-- Card Header - Dropdown -->
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+          <h6 class="m-0 font-weight-bold text-primary">Listado de Compras</h6>
+          <div class="dropdown no-arrow">
+            <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+            </a>
+            <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+              <div class="dropdown-header">Acciones:</div>
+              <a class="dropdown-item" href="{% url 'purchases:purchase_create' %}"><i class="far fa-calendar-plus"></i> Nueva</a>
+              <a class="dropdown-item" href="{% url "purchases:purchase_report_filter"  %}" target="reportes"><i class="fas fa-print"></i>Reportes PDF</a>
+              <div class="dropdown-divider"></div>
+            </div>
+          </div>
+        </div>
+        <!-- Card Body -->
+        <div class="card-body">
+          {% if not purchases %}
+          <div class="alert alert-info">No hay compras</div>
+            {% endif %}
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Id</th>        
+                  <th>Fecha</th>
+                  <th>Observación</th>
+                  <th>No. Factura</th>
+                  <th>F. Factura</th>
+                  <th>Sub Total</th>
+                  <th>Descuento</th>
+                  <th>Iva %</th>
+                  <th>Total</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+               <tbody>
+                  {% for item in purchases %} 
+                    <tr>
+                      <td>{{ item.id }}</td>
+                      <td>{{ item.order_date }}</td>
+                      <td>{{item.observtions}}</td>
+                      <td>{{ item.order_number }}</td>
+                      <td>{{ item.buy_date }}</td>
+                      <td>{{ item.subtotal }}</td>
+                      <td>{{ item.discount }}</td>
+                      <td>{{ item.tax }}</td>
+                      <td>{{ item.total_amount }}</td>
+                      <td>{{item.estado|yesno:"Activo,Inactivo"}}</td>
+                       <td>
+                        <a class="btn btn-warning btn-circle" href="{% url "purchases:purchase_update" item.id %}"><i class="far fa-edit"></i></a>
+                        <a class="btn btn-success btn-circle" href="{% url "purchases:pirnt_purchase_report" item.id %}" target="reportes"><i class="fas fa-print"></i></a>
+                      </td> 
+                    </tr>
+                  {% endfor %}
+                </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-  <!-- Card Body -->
-  <div class="card-body">
-    {% if not obj %}
-    <div class="alert alert-info">No hay compras</div>
-    {% endif %}
-    <table class="table table-striped table-hover dt-responsive nowrap" style="width:100%">
-      <thead>
-        <th>Id</th>        
-        <th>Fecha</th>
-        <th>Observación</th>
-        <th>No. Factura</th>
-        <th>F. Factura</th>
-        <th>Sub Total</th>
-        <th>Descuento</th>
-        <th>Total</th>
-        <th>Estado</th>
-        <th class="all">Acciones</th>
-      </thead>
-      <tbody>
-        {% for item in obj%}
-        <tr>
-          <td>{{ item.id }}</td>
-          <td>{{ item.fecha_compra }}</td>
-          <td>{{item.observacion}}</td>
-          <td>{{ item.no_factura }}</td>
-          <td>{{ item.fecha_factura }}</td>
-          <td>{{ item.sub_total }}</td>
-          <td>{{ item.descuento }}</td>
-          <td>{{ item.total }}</td>
-          <td>{{item.estado|yesno:"Activo,Inactivo"}}</td>
-          <td>
-            <a class="btn btn-warning btn-circle" href="{% url 'cmp:compras_edit' item.id %}"><i class="far fa-edit"></i></a>
-            <a class="btn btn-success btn-circle" href="{% url 'cmp:compras_print_one' item.id %}" target="reportes"><i class="fas fa-print"></i></a>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    {% include "includes/footer.html" %}
   </div>
 </div>
-{% endblock %}
-{% block js_page %}
+{% endblock content %}
+{% block JavaScript %}
 <script>
-// Call the dataTables jQuery plugin
-$(document).ready(function() {
-  $('.table').DataTable({
+  $(document).ready(function() {
+    $('.table').DataTable( {
+  dom: '<"top"fi><"toolbar">rt<"bottom"lpB><"clear">',
+  "paging":   true,
+  "ordering": true,
+  "info":     true,
     "language": {
-      "sProcessing": "Procesando...",
-      "sLengthMenu": "Mostrar _MENU_ registros",
-      "sZeroRecords": "No se encontraron resultados",
-      "sEmptyTable": "Ningún dato disponible en esta tabla",
-      "sInfo": "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
-      "sInfoEmpty": "Mostrando registros del 0 al 0 de un total de 0 registros",
-      "sInfoFiltered": "(filtrado de un total de _MAX_ registros)",
-      "sInfoPostFix": "",
-      "sSearch": "Buscar:",
-      "sUrl": "",
-      "sInfoThousands": ",",
-      "sLoadingRecords": "Cargando...",
-      "oPaginate": {
-          "sFirst": "<span class='fa fa-angle-double-left'></span>",
-          "sLast": "<span class='fa fa-angle-double-right'></span>",
-          "sNext": "<span class='fa fa-angle-right'></span>",
-          "sPrevious": "<span class='fa fa-angle-left'></span>"
-      },
-      "oAria": {
-          "sSortAscending": ": Activar para ordenar la columna de manera ascendente",
-          "sSortDescending": ": Activar para ordenar la columna de manera descendente"
-      }
+        "decimal":        ".",
+        "emptyTable":     "No hay datos en la tabla",
+        "info":           "Mostrando del _START_ al _END_ de _TOTAL_ registros",
+        "infoEmpty":      "Mostrando 0 a 0 de 0 registros",
+        "infoFiltered":   "(filtrados a partir de _MAX_ registros)",
+        "infoPostFix":    "",
+        "thousands":      ",",
+        "lengthMenu":     "Mostrando _MENU_ registros",
+        "loadingRecords": "Cargando...",
+        "processing":     "Procesando...",
+        "search":         "Busqueda:",
+        "zeroRecords":    "No se encontraron registros coincidentes",
+        "paginate": {
+        "first":      "Primero",
+        "last":       "Ultimo",
+        "next":       "Siguiente",
+        "previous":   "Anterior"
+        },
+        "aria": {
+        "sortAscending":  ": activa la ordenación ascendente",
+        "sortDescending": ": activate la ordenanción descendente"
+          }
+      }      
     }
+ 
+    );
   });
-});
 </script>
-{% endblock %}
+
+<script>
+    {% if messages %}  
+        {% for message in messages %}
+            message("{{ message }}", 'green')
+        {% endfor %}
+    {% endif %}
+</script>
+{% endblock JavaScript %}

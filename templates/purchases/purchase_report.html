@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte de Compras por Proveedor - RammerBot</title>
+    <style type="text/css">
+        @page {
+            size: letter;
+            margin: 1.5cm 1cm;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #333;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #2c3e50;
+        }
+        
+        .company-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        
+        .report-title {
+            font-size: 16px;
+            color: #7f8c8d;
+            margin-bottom: 10px;
+        }
+        
+        .report-date {
+            font-size: 12px;
+            color: #95a5a6;
+        }
+        
+        .filter-info {
+            background-color: #f8f9fa;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .table th {
+            background-color: #34495e;
+            color: white;
+            padding: 10px 8px;
+            text-align: left;
+            font-weight: bold;
+        }
+        
+        .table td {
+            padding: 8px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        .table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        .amount {
+            text-align: right;
+            font-weight: bold;
+        }
+        
+        .summary {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e8f4f8;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .supplier-summary {
+            margin-top: 30px;
+        }
+        
+        .supplier-table th {
+            background-color: #2c3e50;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 10px;
+            color: #7f8c8d;
+            border-top: 1px solid #bdc3c7;
+            padding-top: 10px;
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+            font-style: italic;
+        }
+        
+        @media print {
+            .table td {
+                padding: 6px 4px;
+            }
+            
+            .summary, .supplier-summary {
+                background-color: #e8f4f8 !important;
+                -webkit-print-color-adjust: exact;
+            }
+            
+            .table th {
+                background-color: #34495e !important;
+                -webkit-print-color-adjust: exact;
+                color: white !important;
+            }
+            
+            .filter-info {
+                background-color: #f8f9fa !important;
+                -webkit-print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="company-name">Sistema de Compras RammerBot</div>
+        <div class="report-title">Reporte de Compras por Proveedor</div>
+        <div class="report-date">Generado el: {{ today|date:"d/m/Y H:i" }}</div>
+    </div>
+    
+    <!-- Información de Filtros -->
+    {% if start_date or end_date %}
+    <div class="filter-info">
+        <strong>Filtros aplicados:</strong><br>
+        {% if start_date and end_date %}
+        Período: {{ start_date }} al {{ end_date }}
+        {% elif start_date %}
+        Desde: {{ start_date }}
+        {% elif end_date %}
+        Hasta: {{ end_date }}
+        {% endif %}
+    </div>
+    {% endif %}
+    
+
+    <!-- Tabla de Compras por Proveedor -->
+    <div class="supplier-summary">
+        <h3>Total de Compras por Proveedor</h3>
+        <table class="table supplier-table">
+            <thead>
+                <tr>
+                    <th>Proveedor</th>
+                    <th>Cant. Compras</th>
+                    <th>Subtotal</th>
+                    <th>Descuento</th>
+                    <th>IVA</th>
+                    <th>Total</th>
+                    <th>% del Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for supplier in suppliers_totals %}
+                <tr>
+                    <td>{{ supplier.supplier__name }}</td>
+                    <td>{{ supplier.cantidad_compras }}</td>
+                    <td class="amount">${{ supplier.subtotal_compras|default:"0.00" }}</td>
+                    <td class="amount">${{ supplier.discount_compras|default:"0.00" }}</td>
+                    <td class="amount">${{ supplier.tax_compras|default:"0.00" }}</td>
+                    <td class="amount">${{ supplier.total_compras|default:"0.00" }}</td>
+                    <td class="amount">
+                        {% if total_general > 0 %}
+                            {{ supplier.total_compras|default:0|floatformat:2 }}%
+                        {% else %}
+                            0%
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="no-data">No hay datos de compras para el período seleccionado</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Detalle de Compras Individuales -->
+        <h3>Detalle de Compras Individuales</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>No. Factura</th>
+                    <th>Proveedor</th>
+                    <th>Fecha Compra</th>
+                    <th>Subtotal</th>
+                    <th>Descuento</th>
+                    <th>IVA</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in obj %}
+                <tr>
+                    <td>{{ item.order_number }}</td>
+                    <td>{{ item.supplier.name }}</td>
+                    <td>{{ item.buy_date|date:"d/m/Y" }}</td>
+                    <td class="amount">${{ item.subtotal|default:"0.00" }}</td>
+                    <td class="amount">${{ item.discount|default:"0.00" }}</td>
+                    <td class="amount">${{ item.tax|default:"0.00" }}</td>
+                    <td class="amount">${{ item.total_amount|default:"0.00" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="no-data">No se encontraron compras</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+
+
+    <!-- Resumen General -->
+    <div class="summary">
+        <strong>Resumen General:</strong>
+        <div>Total de compras: {{ obj|length }}</div>
+        <div>Subtotal general: ${{ subtotal_general|default:"0.00" }}</div>
+        <div>Descuento general: ${{ discount_general|default:"0.00" }}</div>
+        <div>IVA general: ${{ tax_general|default:"0.00" }}</div>
+        <div><strong>Monto total general: ${{ total_general|default:"0.00" }}</strong></div>
+    </div>
+    
+    
+    <div class="footer">
+        Documento generado automáticamente por el Sistema RammerBot | 
+        Página <span class="pageNumber"></span> de <span class="totalPages"></span>
+    </div>
+</body>
+</html>

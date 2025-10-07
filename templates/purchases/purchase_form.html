@@ -1,9 +1,18 @@
 {% extends 'layout.html'%}
+
+{% load static %}
+{% block title %}Compras{% endblock %}
+
 {% block content %}
+
+<!-- Incluir SweetAlert2 CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+{% include "includes/side_bar.html" %}
     <form method="post" id="frmCompras">
         {% csrf_token %}
         <div class="col-xl-12 col-md-12 mb-12">
-            {% if purchase %}
+            {% if header %}
             <div class="card border-left-warning shadow h-100 py-2">
             {% else %}
             <div class="card border-left-success shadow h-100 py-2">
@@ -12,7 +21,7 @@
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
                                 <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                    {% if purchase %} Editar {% else %} Nueva {% endif %} Compra
+                                    {% if header %} Editar {% else %} Nueva {% endif %} Compra
                                 </div>
                                 <div class="dropdown-divider"></div>
                                 <div class="row">
@@ -20,53 +29,62 @@
                                     <div class="col-6">
                                         <!-- Inicio Encabezado -->
                                         <div class="form-group row">
-                                            <label for="staticEmail" class="col-sm-2 col-form-label">Proveedor:</label>
+                                            <label for="supplier" class="col-sm-2 col-form-label">Proveedor:</label>
                                             <div class="col-sm-10">
-                                              {{ purchase_form.supplier}}
+                                              {{ purchase_form.supplier }}
                                             </div>
                                         </div>
                                         <div class="row">
                                             <div class="col-6">
                                                 <div class="form-group">
-                                                    <label for="id_fecha_compra">Fecha Compra:</label>
-                                                    {{purchase_form.buy_date}}
+                                                    <label for="id_buy_date">Fecha Compra:</label>
+                                                    {{ purchase_form.buy_date}}
                                                 </div>
                                                 <div class="form-group">
-                                                    <label for="id_descripcion">Descripción:</label>
-                                                    {{purchase_form.observation}}
+                                                    <label for="description">Descripción:</label>
+                                                    {{ purchase_form.observations}}
                                                 </div>
                                             </div>
                                             <div class="col-6">
                                                 <div class="form-group">
-                                                    <label for="id_fecha_compra">No. Factura:</label>
-                                                    {{purchase_form.order_number}}
+                                                    <label for="order_number">No. Factura:</label>
+                                                    {{ purchase_form.order_number}}
                                                 </div>
                                                 <div class="form-group">
-                                                    <label for="id_descripcion">Fecha Factura:</label>
-                                                    {{purchase_form.order_date}}
+                                                    <label for="id_order_date">Fecha Factura:</label>
+                                                    {{ purchase_form.order_date}}
                                                 </div>
                                                 <div class="row">
                                                     <div class="col">
-                                                        <label for="Sub Total">Sub Total:</label>
+                                                        <label for="subtotal">Sub Total:</label>
                                                     </div>
                                                     <div class="col">
-                                                        {{ purchase_form.subtotal }}
-                                                    </div>
-                                                </div>
-                                                <div class="row">
-                                                    <div class="col">
-                                                        <label for="sub_total">Descuento:</label>
-                                                    </div>
-                                                    <div class="col">
-                                                        {{ purchase_form.discount }}
+                                                        {{  purchase_form.subtotal }}
                                                     </div>
                                                 </div>
                                                 <div class="row">
                                                     <div class="col">
-                                                        <label for="total">Total:</label>
+                                                        <label for="discount">Descuento:</label>
                                                     </div>
                                                     <div class="col">
-                                                        {{ purchase_form.total_amount }}
+                                                        {{  purchase_form.discount }}
+                                                    </div>
+                                                </div>
+                                                <!-- Nuevo campo para mostrar IVA del encabezado -->
+                                                <div class="row">
+                                                    <div class="col">
+                                                        <label for="tax">IVA:</label>
+                                                    </div>
+                                                    <div class="col">
+                                                        {{  purchase_form.tax }}
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col">
+                                                        <label for="total_amount">Total:</label>
+                                                    </div>
+                                                    <div class="col">
+                                                        {{  purchase_form.total_amount }}
                                                     </div>
                                                 </div>
                                             </div>
@@ -80,18 +98,18 @@
                                             <div class="col">
                                                 <table class="table table-striped table-hover dt-responsive table-sm nowrap tbl-productos" style="width:100%">
                                                     <thead>
-                                                        <th>Id</th>        
-                                                        <th class="all">Descripción</th>
+                                                        <th>Codigo</th>        
+                                                        <th class="all">Producto</th>
                                                         <th class="all">Acciones</th>
                                                     </thead>
                                                     <tbody>
                                                         {% for item in products %}
                                                         <tr>
-                                                        <td>{{ item.name }}</td>
-                                                        <td>{{ item.description }}</td>
+                                                        <td>{{ item.code }}</td>
+                                                        <td>{{ item.name}}</td>
                                                         <td>
                                                             <button type="button" class="btn btn-warning btn-circle"
-                                                            onclick="selectProducto({{item.id}},'{{item.description}}')" ><i class="far fa-hand-pointer"></i></button>
+                                                            onclick="selectProducto({{item.id}},'{{item.name}}',{{item.price}}, {{item.code}})" ><i class="far fa-hand-pointer"></i></button>
                                                         </td>
                                                         </tr>
                                                         {% endfor %}
@@ -115,15 +133,23 @@
                                             </div>
                                             <label for="id_precio_detalle" class="col-sm-2 col-form-label">Precio:</label>
                                             <div class="col-sm-2">
-                                                <input type="number" class="form-control" name="id_precio_detalle" id="id_precio_detalle" value="00" required>
+                                                <input type="number" readonly class="form-control-plaintext" name="id_precio_detalle" id="id_precio_detalle" value="00" required>
                                             </div>
-                                            <label for="id_descuento_detalle" class="col-sm-2 col-form-label">Desc.:</label>
+                                            <label for="id_descuento_detalle" class="col-sm-2 col-form-label">Desc. %:</label>
                                             <div class="col-sm-2">
-                                                <input type="text" class="form-control" name="id_descuento_detalle" id="id_descuento_detalle" value="00">
+                                                <input type="text" class="form-control" name="id_descuento_detalle" id="id_descuento_detalle" value="00"> 
                                             </div>
+                                            <label for="id_impuesto_detalle" class="col-sm-2 col-form-label">IVA%:</label>
+                                            <div class="col-sm-2">
+                                                <input type="checkbox" class="form-control" name="id_impuesto_detalle" id="id_impuesto_detalle" >
+                                            </div>
+                                            <div class="col-sm-2">
+                                                <input type="number" readonly class="form-control-plaintext" name="id_impuesto" id="id_impuesto" > 
+                                            </div>
+
                                         </div>
                                         <div class="form-group row">
-                                            <label for="id_sub_total_detalle" class="col-sm-2 col-form-label">S. Total:</label>
+                                            <label for="subtotal" class="col-sm-2 col-form-label">S. Total:</label>
                                             <div class="col-sm-4">
                                                 <input type="text" readonly class="form-control-plaintext" name="id_sub_total_detalle" id="id_sub_total_detalle" value="00">
                                             </div>
@@ -150,28 +176,35 @@
                                 <!-- Inicio Detalle -->
                                 <div class="row">
                                     <div class="col">
-                                        <table class="table table-striped table-hover dt-responsive nowrap" style="width:100%">
+                                        <table class="table table-striped table-hover dt-responsive nowrap" style="width:100%" id="details-table">
                                             <thead>
                                                 <th>Producto</th>        
                                                 <th>Cantidad</th>
                                                 <th>Precio</th>
                                                 <th>Sub Total</th>
                                                 <th>Desc.</th>
+                                                <th>IVA</th>
                                                 <th>Total</th>
                                                 <th class="all">Acciones</th>
                                             </thead>
                                             <tbody>
-                                                {% for item in detalle %}
-                                                <tr>
-                                                <td>{{ item.producto }}</td>
-                                                <td>{{ item.cantidad }}</td>
-                                                <td>{{ item.cantidad }}</td>
-                                                <td>{{ item.sub_total }}</td>
-                                                <td>{{ item.descuento }}</td>
-                                                <td>{{ item.total }}</td>
-                                                <td>
-                                                    <button class="btn btn-danger btn-circle" onclick="return abrir_modal('{% url 'cmp:compras_del' encabezado.pk item.id %}')"><i class="fas fa-trash-alt"></i></button>
-                                                </td>
+                                                {% for item in purchase_items %}
+                                                <tr id="item-{{ item.id }}">
+                                                    <td>{{ item.product.name }}</td>
+                                                    <td>{{ item.quantity }}</td>
+                                                    <td>${{ item.unit_price }}</td>
+                                                    <td>${{ item.subtotal }}</td>
+                                                    <td>${{ item.discount }}</td>
+                                                    <td>${{ item.tax }}</td>
+                                                    <td>${{ item.total_price }}</td>
+                                                    <td>
+                                                        <button type="button" 
+                                                                class="btn btn-danger btn-circle btn-sm" 
+                                                                onclick="deleteItem({{ item.id }}, {{ header.id }})"
+                                                                title="Eliminar item">
+                                                            <i class="fas fa-trash-alt"></i>
+                                                        </button>
+                                                    </td>
                                                 </tr>
                                                 {% endfor %}
                                             </tbody>
@@ -184,12 +217,221 @@
                 </div>
         </div>
     </form>
+
+    {% block modal %}
+<div class="modal fade" id="popup" >
+</div>
+{% endblock modal %}
 {% endblock %}
-{% block js_page %}
+{% block JavaScript %}
+
+<!-- Incluir SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+
+<script>
+    function open_modal(url) 
+    {
+        $('#popup').load(url, function(){
+        $(this).modal({
+            backdrop: 'static',
+            keyboard: false
+        })
+        $(this).modal('show');
+       });
+       return false;
+    }
+    function close_modal(){
+        $('#popup').modal('hide');
+        return false;
+    }
+</script>
+
+<script>
+    function updateTotals(totals) {
+        console.log('Actualizando totales del encabezado:', totals);
+        
+        const subtotalField = document.querySelector('[name="subtotal"]');
+        const discountField = document.querySelector('[name="discount"]');
+        const taxField = document.querySelector('[name="tax"]');
+        const totalAmountField = document.querySelector('[name="total_amount"]');
+        
+        if (totals.subtotal !== undefined && subtotalField) {
+            subtotalField.value = totals.subtotal;
+        }
+        
+        if (totals.discount !== undefined && discountField) {
+            discountField.value = totals.discount;
+        }
+        
+        if (totals.tax !== undefined && taxField) {
+            taxField.value = totals.tax;
+        }
+        
+        if (totals.total_amount !== undefined && totalAmountField) {
+            totalAmountField.value = totals.total_amount;
+        }
+    }
+
+    async function deleteItem(itemId, purchaseId) {
+        const result = await Swal.fire({
+            title: '¿Estás seguro?',
+            text: "¡Esta acción no se puede deshacer!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            customClass: {
+                popup: 'custom-swal-popup'
+            }
+        });
+
+        if (!result.isConfirmed) {
+            return;
+        }
+
+        const deleteBtn = event.target.closest('button');
+        const originalHtml = deleteBtn.innerHTML;
+        deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        deleteBtn.disabled = true;
+
+        try {
+            const response = await fetch(`/purchases/delete/${purchaseId}/${itemId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error('Error en la respuesta del servidor');
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Eliminar la fila de la tabla con animación
+                const row = document.getElementById(`item-${itemId}`);
+                if (row) {
+                    row.style.transition = 'all 0.3s ease';
+                    row.style.opacity = '0';
+                    setTimeout(() => row.remove(), 300);
+                }
+                
+                // Actualizar los totales en el formulario
+                if (data.updated_totals) {
+                    updateTotals(data.updated_totals);
+                }
+                
+                // Mostrar mensaje de éxito
+                await Swal.fire({
+                    title: '¡Eliminado!',
+                    text: 'Item eliminado correctamente',
+                    icon: 'success',
+                    confirmButtonColor: '#3085d6',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } else {
+                throw new Error(data.error || 'Error desconocido del servidor');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            await Swal.fire({
+                title: 'Error',
+                text: 'Error al eliminar el item: ' + error.message,
+                icon: 'error',
+                confirmButtonColor: '#d33'
+            });
+        } finally {
+            // Restaurar el botón
+            deleteBtn.innerHTML = originalHtml;
+            deleteBtn.disabled = false;
+        }
+    }
+
+    // Función para enviar el formulario por AJAX
+    function submitFormAJAX() {
+        const formData = new FormData(document.getElementById('frmCompras'));
+        
+        // Mostrar indicador de carga
+        const submitBtn = document.querySelector('button[type="submit"]');
+        const originalHtml = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+        submitBtn.disabled = true;
+
+        fetch(window.location.href, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error en la respuesta del servidor');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Actualizar los totales en el formulario
+                if (data.updated_totals) {
+                    updateTotals(data.updated_totals);
+                }
+                
+                // Mostrar mensaje de éxito
+                Swal.fire({
+                    title: '¡Éxito!',
+                    text: data.message || 'Producto guardado correctamente',
+                    icon: 'success',
+                    confirmButtonColor: '#3085d6',
+                    timer: 3000,
+                    showConfirmButton: false
+                }).then(() => {
+                    // Recargar la página para mostrar los nuevos items
+                    window.location.reload();
+                });
+            } else {
+                throw new Error(data.error || 'Error desconocido del servidor');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                title: 'Error',
+                text: 'Error al guardar el producto: ' + error.message,
+                icon: 'error',
+                confirmButtonColor: '#d33'
+            });
+        })
+        .finally(() => {
+            // Restaurar el botón
+            submitBtn.innerHTML = originalHtml;
+            submitBtn.disabled = false;
+        });
+    }
+
+    // Estilos personalizados para SweetAlert2
+    const style = document.createElement('style');
+    style.textContent = `
+        .custom-swal-popup {
+            font-family: inherit;
+            border-radius: 0.5rem;
+        }
+        .swal2-confirm {
+            border-radius: 0.25rem !important;
+        }
+    `;
+    document.head.appendChild(style);
+</script>
+
 <script>
     $(function () {
-
-        $("#id_fecha_compra, #id_fecha_factura").datetimepicker({
+        $("#id_buy_date, #id_order_date").datetimepicker({
             format: 'Y-m-d',
             timepicker:false
         });
@@ -197,7 +439,7 @@
         $("#sidebarToggle").click();
 
         $('.table').DataTable({
-            "pageLength": 2,
+            "pageLength": 5,
             "language": {
             "sProcessing": "Procesando...",
             "sLengthMenu": "Mostrar _MENU_ registros",
@@ -224,114 +466,138 @@
             }
         });
 
-        $('#id_cantidad_detalle,#id_precio_detalle,#id_descuento_detalle').change(function(){
+        $('#id_cantidad_detalle,#id_precio_detalle,#id_descuento_detalle, #id_impuesto_detalle').change(function(){
             calcular_detalle();
         });
 
-        /*Validar Envío de Detalle */
+        /*Validar y Enviar Formulario por AJAX */
         $("#frmCompras").submit(function(e){
+            e.preventDefault();
 
-            var  no_fact = $("#id_no_factura").val();
-            console.log(no_fact);
-            
-            if(no_fact.trim()==""){
-                e.preventDefault()
-                $.alert({
-                        type:'red',
-                        title:'',
-                        content:'Debe Especificar No. de Factura'
-                        });
-                return false;
+            // Validaciones básicas
+            let hasErrors = false;
+            const orderNumber = $("#id_order_number").val();
+            const buyDate = $("#id_buy_date").val();
+            const orderDate = $("#id_order_date").val();
+            const totalDetalle = $('#id_total_detalle').val();
+            const idProducto = $('#id_id_producto').val();
+
+            if(!orderNumber || orderNumber.trim() === ""){
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Debe Especificar No. de Factura'
+                });
+                hasErrors = true;
             }
 
-
-            if($("#id_fecha_compra").val()=="" || $("#id_fecha_factura").val()==""){
-                e.preventDefault()
-                $.alert({
-                        type:'red',
-                        title:'',
-                        content:'Debe Especificar Fecha'
-                        });
-                return false;
+            if((!buyDate || buyDate === "") || (!orderDate || orderDate === "")){
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Debe Especificar Fecha de Compra y Factura'
+                });
+                hasErrors = true;
             }
 
-            if($('#id_total_detalle').val()==0 || $('#id_id_producto').val()==0 ){
-                e.preventDefault();
-                //alert("No ha agregado producto o está sin cantidades");
-                $.alert({
-                        type:'red',
-                        title:'',
-                        content:'No ha agregado producto o está sin cantidades'
-                        })
+            if(!totalDetalle || totalDetalle == 0 || !idProducto || idProducto === ""){
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'No ha agregado producto o está sin cantidades'
+                });
+                hasErrors = true;
+            }
+
+            if (!hasErrors) {
+                submitFormAJAX();
             }
         });
         /*Fin Validar Envío de Detalle */
-
     });
 
-    function selectProducto(id,descripcion)
-    {
+    function selectProducto(id,name, price, code) {
         $("#id_cantidad_detalle").val(0);
-        $('#id_precio_detalle').val(0);
+        $('#id_precio_detalle').val(parseFloat(price));
         $('#id_descuento_detalle').val(0);
+        $('#id_impuesto').val(0);
 
         $('#id_sub_total_detalle').val(0);
         $('#id_total_detalle').val(0);
 
         $("#id_id_producto").val(+id);
-        $('#id_descripcion_producto').val(descripcion);
+        $('#id_descripcion_producto').val(name);
         $('#id_cantidad_detalle').focus();
         $('#id_cantidad_detalle').select();
 
         $('.table').DataTable().search('').draw();
     }
 
-    function calcular_detalle()
-    {
-        var cant,prec,desc,stotal,total;
+   function calcular_detalle() {
+        var cant, prec, desc, stotal, total, impuesto;
 
         cant = $("#id_cantidad_detalle").val();
-        cant = cant==="" ? 0 : +cant;
-        cant = cant<0 ? 0 : cant;
+        cant = cant === "" ? 0 : +cant;
+        cant = cant < 0 ? 0 : cant;
 
-        prec =$('#id_precio_detalle').val();
-        prec = prec==="" ? 0 : +prec;
-        prec = prec<0 ? 0 : prec;
+        prec = $('#id_precio_detalle').val();
+        prec = prec === "" ? 0 : +prec;
+        prec = prec < 0 ? 0 : prec;
 
         desc = $('#id_descuento_detalle').val();
-        desc = desc==="" ? 0 : +desc;
-        desc = desc<0 ? 0 : desc;
-
-        desc = desc>(cant * prec) ? 0 : desc;
+        desc = desc === "" ? 0 : +desc;
+        desc = desc < 0 ? 0 : desc;
+        desc = desc > (cant * prec) ? 0 : desc;
 
         stotal = cant * prec;
-        total  = stotal - desc;
+
+        if ($("#id_impuesto_detalle").is(":checked")) {
+            impuesto = stotal * 0.16;
+        } else {
+            impuesto = 0;
+        }
+
+        total = (stotal + impuesto) -((stotal + impuesto)*(desc /100));
 
         $('#id_cantidad_detalle').val(cant);
         $('#id_precio_detalle').val(prec);
         $('#id_descuento_detalle').val(desc);
-
-        $('#id_sub_total_detalle').val(stotal);
-        $('#id_total_detalle').val(total);
-
+        $('#id_sub_total_detalle').val(stotal.toFixed(2));
+        $('#id_total_detalle').val(total.toFixed(2));
+        $('#id_impuesto').val(impuesto.toFixed(2));
     }
 
     function clear_Detail(){
         $('#id_cantidad_detalle').val(0);
         $('#id_precio_detalle').val(0);
         $('#id_descuento_detalle').val(0);
+        $('#id_impuesto_detalle').prop('checked', false);
 
         $('#id_sub_total_detalle').val(0);
         $('#id_total_detalle').val(0);
+        $('#id_impuesto').val(0);
 
         $('#id_id_producto').val('');
         $('#id_descripcion_producto').val('');
 
         $('.table').DataTable().search('').draw();
-
         $("#id_proveedor").focus();
     }
 
     $("#id_proveedor").focus();
+</script>
+
+<script>
+    {% if messages %}  
+        {% for message in messages %}
+            Swal.fire({
+                icon: 'success',
+                title: 'Éxito',
+                text: '{{ message }}',
+                timer: 3000,
+                showConfirmButton: false
+            });
+        {% endfor %}
+    {% endif %}
 </script>
 {% endblock %}

@@ -24,6 +24,10 @@
   <!-- Custom styles for this template-->
   <link href="{% static 'css/sb-admin-2.min.css' %}" rel="stylesheet">
 
+  <!-- XDSoft DateTimePicker -->  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.20/jquery.datetimepicker.min.css" integrity="sha256-DOS9W6NR+NFe1fUhEE0PGKY/fubbUCnOfTje2JMDw3Y=" crossorigin="anonymous" />
+
+  <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
 <body id="page-top">
@@ -56,6 +60,14 @@
   <script src="{% static 'js/demo/datatables-demo.js'%}"></script>
 
   <script src="{% static 'vendor/jquery_confirm/jquery-confirm.min.js' %}"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.20/jquery.datetimepicker.full.min.js" integrity="sha256-FEqEelWI3WouFOo2VWP/uJfs1y8KJ++FLh2Lbqc8SJk=" crossorigin="anonymous"></script>
+
+ <script>
+  $(document).ready(function() {
+    jQuery.datetimepicker.setLocale('es');
+  });
+</script>
 
   <script>
     function message(msg, color='green')

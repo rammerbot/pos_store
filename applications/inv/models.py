@@ -1,6 +1,7 @@
 from django.db import models
 from applications.home.models import BaseModel
 
+
 # Create your models here.
 
 class Category(BaseModel):
@@ -120,3 +121,5 @@ class Product(BaseModel):
         self.status = not self.status
         self.save()
         return self.status
+    
+

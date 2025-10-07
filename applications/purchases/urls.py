@@ -1,6 +1,8 @@
 from django.urls import path
 
 from . import views
+from . import reports
+
 
 app_name = "purchases"
 urlpatterns = [
@@ -12,6 +14,10 @@ urlpatterns = [
 
     # Purchases URLs
     path('purchases/', views.PurchasesListView.as_view(), name='purchase_list'),
-     path('purchase/', views.purchase, name='purchase_create'),
-     path('purchase/update/<int:purchase_id>',views.purchase, name="purchase_update"),
+    path('purchase/', views.purchase_order_view, name='purchase_create'),
+    path('purchase/update/<int:purchase_id>',views.purchase_order_view, name="purchase_update"),
+    path('delete/<int:purchase_id>/<int:pk>/', views.PurchaseDeleteView.as_view(), name='purchase_delete'),
+    path('purchases/report/pdf/',reports.purshase_repotr_to_pdf, name='purchase_report_pdf'),
+    path('purchases/report/filter/', reports.purchase_report_filter, name='purchase_report_filter'),
+    path('purchases/report/print/<int:purchase_id>', reports.print_purchase_report, name='pirnt_purchase_report'),
 ]

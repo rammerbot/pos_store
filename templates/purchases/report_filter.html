@@ -1,0 +1,46 @@
+<!-- templates/purchases/report_filter.html -->
+{% extends 'layout.html' %}
+{% load static %}
+
+{% block content %}
+{% include "includes/side_bar.html" %}
+    <!-- Content Wrapper -->
+    <div id="content-wrapper" class="d-flex flex-column">
+        <!-- Main Content -->
+        <div id="content">
+            {% include "includes/header.html" %}
+                <div class="container mt-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4>Filtros para Reporte de Compras por Proveedor</h4>
+                        </div>
+                        <div class="card-body">
+                            <form method="GET" action="{% url 'purchases:purchase_report_pdf' %}" target="_blank">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="start_date">Fecha de Inicio:</label>
+                                            <input type="date" class="form-control" id="start_date" name="start_date">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="end_date">Fecha de Fin:</label>
+                                            <input type="date" class="form-control" id="end_date" name="end_date">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-3">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-file-pdf"></i> Generar Reporte PDF
+                                    </button>
+                                    <a href="{% url 'purchases:purchase_list' %}" class="btn btn-secondary">Cancelar</a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+        </div>
+    </div>
+                
+{% endblock %}
