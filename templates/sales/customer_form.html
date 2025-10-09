@@ -1,0 +1,120 @@
+<!-- customer_form.html -->
+<div class="modal-dialog modal-lg">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">
+                {% if customer %}Editar{% else %}Nuevo{% endif %} Proveedor
+            </h5>
+            <button type="button" class="close" onclick="close_modal()">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        
+        <form method="post" role="form" 
+        action="{% if customer %}{% url 'sales:update_customer' customer.id %}{% else %}{% url 'sales:create_customer' %}{% endif %}"
+        enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            {% if form.errors %}
+            <div class="alert alert-danger">
+                <strong>Errores:</strong>
+                <ul>
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                    <li>{{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
+            <div class="modal-body">
+                <div class="card border-left-success shadow">
+                    <div class="card-body">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-3">
+                            {% if customer %}Editar{% else %}Nuevo{% endif %} Proveedor
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        
+                        <!-- Renderizar campos manualmente -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label>{{ form.name.label }}</label>
+                                {{ form.name }}
+                                {% if form.name.errors %}
+                                <div class="text-danger small">{{ form.name.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label>{{ form.last_name.label }}</label>
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}
+                                <div class="text-danger small">{{ form.last_name.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label>{{ form.dni.label }}</label>
+                                {{ form.dni }}
+                                {% if form.dni.errors %}
+                                <div class="text-danger small">{{ form.dni.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label>{{ form.phone.label }}</label>
+                                {{ form.phone }}
+                                {% if form.phone.errors %}
+                                <div class="text-danger small">{{ form.phone.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label>{{ form.email.label }}</label>  <!-- Corregí "emain" a "email" -->
+                                {{ form.email }}
+                                {% if form.email.errors %}
+                                <div class="text-danger small">{{ form.email.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                         <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label>{{ form.type_customer.label }}</label>
+                                {{ form.type_customer }}
+                                {% if form.type_customer.errors %}
+                                <div class="text-danger small">{{ form.type_customer.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label>{{ form.gender.label }}</label>  <!-- Corregí "emain" a "email" -->
+                                {{ form.gender }}
+                                {% if form.gender.errors %}
+                                <div class="text-danger small">{{ form.gender.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label>{{ form.address.label }}</label>
+                                {{ form.address }}
+                                {% if form.address.errors %}
+                                <div class="text-danger small">{{ form.address.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>          
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="close_modal()">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-save"></i> Guardar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

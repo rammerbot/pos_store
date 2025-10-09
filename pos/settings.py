@@ -44,6 +44,7 @@ THIRD_APPS = []
 LOCAL_APPS = ['applications.home',
               'applications.inv',
               'applications.purchases',
+              'applications.sales',
               ]
 
 

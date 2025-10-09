@@ -27,7 +27,12 @@
   <!-- XDSoft DateTimePicker -->  
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.20/jquery.datetimepicker.min.css" integrity="sha256-DOS9W6NR+NFe1fUhEE0PGKY/fubbUCnOfTje2JMDw3Y=" crossorigin="anonymous" />
 
+  <!-- Incluir SweetAlert2 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
   <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link href="{% static 'select2/css/select2.min.css' %}" rel="stylesheet" />
+ 
 </head>
 
 <body id="page-top">
@@ -62,7 +67,9 @@
   <script src="{% static 'vendor/jquery_confirm/jquery-confirm.min.js' %}"></script>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.20/jquery.datetimepicker.full.min.js" integrity="sha256-FEqEelWI3WouFOo2VWP/uJfs1y8KJ++FLh2Lbqc8SJk=" crossorigin="anonymous"></script>
-
+   
+  <script src="{% static 'select2/js/select2.min.js'%}"></script>
+  
  <script>
   $(document).ready(function() {
     jQuery.datetimepicker.setLocale('es');

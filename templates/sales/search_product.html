@@ -1,0 +1,92 @@
+<div class="modal-dialog modal-lg">
+    <div class="modal-content">
+        <div class="col-xl-12 col-md-12 mb-12">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Buscar Producto
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        
+                        <div class="row">
+                                <table
+                                id="tblProducto"
+                                data-pagination="true"
+                                data-search="true"
+                                data-show-columns="true"
+                                data-show-fullscreen="true"
+                                data-locale="es-NI"
+                                >
+                                <thead>                                      
+                                  <th data-sortable="true" data-field="code">Código</th>
+                                  <th data-field="name">Producto</th>
+                                  <th data-field="stock">Existencia</th>
+                                  <th data-field="price">Precio</th>
+                                  <th class="all">Acciones</th>
+                                </thead>
+                                <tbody>
+                                  {% for item in products%}
+                                  <tr>
+                                    <td>{{ item.code }}</td>
+                                    <td>{{ item.name }}</td>
+                                    <td>{{item.stock}}</td>
+                                    <td>{{item.price}}</td>
+                                    <td>
+                                        {% if item.existencia > 0 and item.estado %}
+                                        <button class="btn btn-warning btn-circle" id="btnSelect" 
+                                        onclick="seleccionarProducto({{item.id}},'{{item.code}}','{{item.name}}',{{item.price}})">
+                                            <i class="far fa-hand-pointer"></i>
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                  </tr>
+                                  {% endfor %}
+                                </tbody>
+                              </table>
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <div class="row">
+                            <div class="col">
+                                <!-- <button type="submit" class="btn btn-danger"><span class="fa fa-save"></span> Guardar</button> -->
+                                <button type="button" id="btnCancelar" class="btn btn-success">
+                                        <!-- onclick="return cerrar_modal()" -->
+                                        Cancelar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="far fa-calendar-plus fa-2x text-gray-300"></i>
+                    </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 
+{% block JavaScript %}
+<script>
+    $(function () {
+
+        $("#btnCancelar").click(function(e){
+            e.preventDefault();
+            cerrar_modal();
+
+        });
+    });
+    $('#tblProducto').bootstrapTable();
+
+    function seleccionarProducto(id,code,name,price){
+        $("#code").val(code);
+        $("#name").val(descripcion);
+        $("#price").val(precio);
+        $("#btnCancelar").click();
+        $("#code").select();
+        $("#code").focus();
+
+    }
+
+</script>
+{% endblock %}

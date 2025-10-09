@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% load static %}
-{% block title %}Compras{% endblock title %}
+{% block title %}Ventas{% endblock title %}
 
 {% block content %}
 {% include "includes/side_bar.html" %}
@@ -15,14 +15,14 @@
       <div class="card shadow mb-4">
         <!-- Card Header - Dropdown -->
         <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-          <h6 class="m-0 font-weight-bold text-primary">Listado de Compras</h6>
+          <h6 class="m-0 font-weight-bold text-primary">Listado de Ventas</h6>
           <div class="dropdown no-arrow">
             <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
             </a>
             <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
               <div class="dropdown-header">Acciones:</div>
-              <a class="dropdown-item" href="{% url 'purchases:purchase_create' %}"><i class="far fa-calendar-plus"></i> Nueva</a>
+              <a class="dropdown-item" href="{% url 'sales:sale_create' %}"><i class="far fa-calendar-plus"></i> Nueva</a>
               <a class="dropdown-item" href="{% url "purchases:purchase_report_filter"  %}" target="reportes"><i class="fas fa-print"></i>Reportes PDF</a>
               <div class="dropdown-divider"></div>
             </div>
@@ -30,17 +30,15 @@
         </div>
         <!-- Card Body -->
         <div class="card-body">
-          {% if not purchases %}
-          <div class="alert alert-info">No hay compras</div>
+          {% if not sales %}
+          <div class="alert alert-info">No hay Ventas</div>
             {% endif %}
             <table class="table table-striped">
               <thead>
                 <tr>
-                  <th>Id</th>        
+                  <th>No. Factura</th>   
                   <th>Fecha</th>
-                  <th>Observación</th>
-                  <th>No. Factura</th>
-                  <th>F. Factura</th>
+                  <th>cliente</th>
                   <th>Sub Total</th>
                   <th>Descuento</th>
                   <th>Iva %</th>
@@ -50,20 +48,18 @@
                 </tr>
               </thead>
                <tbody>
-                  {% for item in purchases %} 
+                  {% for item in sales %} 
                     <tr>
-                      <td>{{ item.id }}</td>
-                      <td>{{ item.order_date }}</td>
-                      <td>{{item.observtions}}</td>
-                      <td>{{ item.order_number }}</td>
-                      <td>{{ item.buy_date }}</td>
-                      <td>{{ item.subtotal }}</td>
+                      <td>{{ item.invoice_number }}</td>
+                      <td>{{ item.date }}</td>
+                      <td>{{ item.customer.full_name }}</td>
+                      <td>{{item.subtotal}}</td>
                       <td>{{ item.discount }}</td>
                       <td>{{ item.tax }}</td>
                       <td>{{ item.total_amount }}</td>
-                      <td>{{item.status|yesno:"Activo,Inactivo"}}</td>
+                      <td>{{item.status|yesno:"Activo, Inactivo"}}</td>
                        <td>
-                        <a class="btn btn-warning btn-circle" href="{% url "purchases:purchase_update" item.id %}"><i class="far fa-edit"></i></a>
+                        <a class="btn btn-warning btn-circle" href="{% url "sales:sale_update" item.id %}"><i class="far fa-edit"></i></a>
                         <a class="btn btn-success btn-circle" href="{% url "purchases:pirnt_purchase_report" item.id %}" target="reportes"><i class="fas fa-print"></i></a>
                       </td> 
                     </tr>

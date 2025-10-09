@@ -1,7 +1,7 @@
 {% extends 'layout.html'%}
 
 {% load static %}
-{% block title %}Compras{% endblock %}
+{% block title %}Facturacion{% endblock %}
 
 {% block content %}
 
@@ -21,7 +21,7 @@
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
                                 <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                    {% if header %} Editar {% else %} Nueva {% endif %} Compra
+                                    {% if header %} Editar {% else %} Nueva {% endif %} Factura
                                 </div>
                                 <div class="dropdown-divider"></div>
                                 <div class="row">
@@ -29,37 +29,33 @@
                                     <div class="col-6">
                                         <!-- Inicio Encabezado -->
                                         <div class="form-group row">
-                                            <label for="supplier" class="col-sm-2 col-form-label">Proveedor:</label>
+                                            <label for="customer" class="col-sm-2 col-form-label">Cliente:</label>
                                             <div class="col-sm-10">
-                                              {{ purchase_form.supplier }}
+                                              {{ sale_form.customer }}
                                             </div>
                                         </div>
                                         <div class="row">
                                             <div class="col-6">
                                                 <div class="form-group">
-                                                    <label for="id_buy_date">Fecha Compra:</label>
-                                                    {{ purchase_form.buy_date}}
+                                                    <label for="date">Fecha:</label>
+                                                    {{ header.date}}
                                                 </div>
                                                 <div class="form-group">
                                                     <label for="description">Descripción:</label>
-                                                    {{ purchase_form.observations}}
+                                                    {{ sale_form.observation}}
                                                 </div>
                                             </div>
                                             <div class="col-6">
                                                 <div class="form-group">
-                                                    <label for="order_number">No. Factura:</label>
-                                                    {{ purchase_form.order_number}}
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="id_order_date">Fecha Factura:</label>
-                                                    {{ purchase_form.order_date}}
-                                                </div>
+                                                    <label for="invoice_number">No. Factura:</label>
+                                                    {{ header.invoice_number}}
+                                                </div>                                           
                                                 <div class="row">
                                                     <div class="col">
                                                         <label for="subtotal">Sub Total:</label>
                                                     </div>
                                                     <div class="col">
-                                                        {{  purchase_form.subtotal }}
+                                                        {{  sale_form.subtotal }}
                                                     </div>
                                                 </div>
                                                 <div class="row">
@@ -67,7 +63,7 @@
                                                         <label for="discount">Descuento:</label>
                                                     </div>
                                                     <div class="col">
-                                                        {{  purchase_form.discount }}
+                                                        {{  sale_form.discount }}
                                                     </div>
                                                 </div>
                                                 <!-- Nuevo campo para mostrar IVA del encabezado -->
@@ -76,7 +72,7 @@
                                                         <label for="tax">IVA:</label>
                                                     </div>
                                                     <div class="col">
-                                                        {{  purchase_form.tax }}
+                                                        {{  sale_form.tax }}
                                                     </div>
                                                 </div>
                                                 <div class="row">
@@ -84,7 +80,7 @@
                                                         <label for="total_amount">Total:</label>
                                                     </div>
                                                     <div class="col">
-                                                        {{  purchase_form.total_amount }}
+                                                        {{  sale_form.total_amount }}
                                                     </div>
                                                 </div>
                                             </div>
@@ -166,7 +162,7 @@
                                         <div class="row">
                                             <div class="col">
                                                 <button type="submit" class="btn btn-success"><span class="fa fa-save"></span> Guardar</button>
-                                                <a href="{% url 'purchases:purchase_list' %}" class="btn btn-danger"><i class="far fa-hand-point-left"></i> Cancelar</a>
+                                                <a href="{% url 'sales:sales_list' %}" class="btn btn-danger"><i class="far fa-hand-point-left"></i> Cancelar</a>
                                             </div>
                                         </div>
                                         <!-- Fin Botones -->
@@ -188,7 +184,7 @@
                                                 <th class="all">Acciones</th>
                                             </thead>
                                             <tbody>
-                                                {% for item in purchase_items %}
+                                                {% for item in sale_items %}
                                                 <tr id="item-{{ item.id }}">
                                                     <td>{{ item.product.name }}</td>
                                                     <td>{{ item.quantity }}</td>
@@ -272,7 +268,7 @@
         }
     }
 
-    async function deleteItem(itemId, purchaseId) {
+    async function deleteItem(itemId, saleId) {
         const result = await Swal.fire({
             title: '¿Estás seguro?',
             text: "¡Esta acción no se puede deshacer!",
@@ -297,7 +293,7 @@
         deleteBtn.disabled = true;
 
         try {
-            const response = await fetch(`/purchases/delete/${purchaseId}/${itemId}/`, {
+            const response = await fetch(`/sales/sales/delete/${saleId}/${itemId}/`, {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
@@ -353,6 +349,7 @@
     }
 
     // Función para enviar el formulario por AJAX
+    // Función para enviar el formulario por AJAX
     function submitFormAJAX() {
         const formData = new FormData(document.getElementById('frmCompras'));
         
@@ -378,23 +375,39 @@
         })
         .then(data => {
             if (data.success) {
-                // Actualizar los totales en el formulario
-                if (data.updated_totals) {
-                    updateTotals(data.updated_totals);
+                // Si se creó una nueva factura, redirigir a la URL de edición
+                if (data.redirect_url) {
+                    // Mostrar mensaje de éxito y redirigir
+                    Swal.fire({
+                        title: '¡Éxito!',
+                        text: data.message || 'Factura creada exitosamente',
+                        icon: 'success',
+                        confirmButtonColor: '#3085d6',
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        // Redirigir a la edición de la nueva factura
+                        window.location.href = data.redirect_url;
+                    });
+                } else {
+                    // Actualizar los totales en el formulario (para ediciones)
+                    if (data.updated_totals) {
+                        updateTotals(data.updated_totals);
+                    }
+                    
+                    // Mostrar mensaje de éxito
+                    Swal.fire({
+                        title: '¡Éxito!',
+                        text: data.message || 'Producto guardado correctamente',
+                        icon: 'success',
+                        confirmButtonColor: '#3085d6',
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        // Recargar la página para mostrar los nuevos items
+                        window.location.reload();
+                    });
                 }
-                
-                // Mostrar mensaje de éxito
-                Swal.fire({
-                    title: '¡Éxito!',
-                    text: data.message || 'Producto guardado correctamente',
-                    icon: 'success',
-                    confirmButtonColor: '#3085d6',
-                    timer: 3000,
-                    showConfirmButton: false
-                }).then(() => {
-                    // Recargar la página para mostrar los nuevos items
-                    window.location.reload();
-                });
             } else {
                 throw new Error(data.error || 'Error desconocido del servidor');
             }
@@ -403,7 +416,7 @@
             console.error('Error:', error);
             Swal.fire({
                 title: 'Error',
-                text: 'Error al guardar el producto: ' + error.message,
+                text: 'Error al guardar: ' + error.message,
                 icon: 'error',
                 confirmButtonColor: '#d33'
             });
@@ -431,7 +444,7 @@
 
 <script>
     $(function () {
-        $("#id_buy_date, #id_order_date").datetimepicker({
+        $("#date").datetimepicker({
             format: 'Y-m-d',
             timepicker:false
         });
@@ -481,24 +494,6 @@
             const orderDate = $("#id_order_date").val();
             const totalDetalle = $('#id_total_detalle').val();
             const idProducto = $('#id_id_producto').val();
-
-            if(!orderNumber || orderNumber.trim() === ""){
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Debe Especificar No. de Factura'
-                });
-                hasErrors = true;
-            }
-
-            if((!buyDate || buyDate === "") || (!orderDate || orderDate === "")){
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Debe Especificar Fecha de Compra y Factura'
-                });
-                hasErrors = true;
-            }
 
             if(!totalDetalle || totalDetalle == 0 || !idProducto || idProducto === ""){
                 Swal.fire({

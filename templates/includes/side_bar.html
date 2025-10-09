@@ -75,6 +75,21 @@
       </div>
     </div>
   </li>
+
+  <!-- Nav Item - Administrar Compras -->
+  <li class="nav-item">
+    <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseSales" aria-expanded="true" aria-controls="collapseSales">
+      <i class="fas fa-fw fa-shopping-cart"></i>
+      <span>Administrar Ventas</span>
+    </a>
+    <div id="collapseSales" class="collapse" aria-labelledby="headingSales" data-parent="#accordionSidebar">
+      <div class="bg-white py-2 collapse-inner rounded">
+        <h6 class="collapse-header">Administrar Ventas</h6>
+        <a class="collapse-item" href="{% url "sales:customers_list" %}">Clientes</a>
+        <a class="collapse-item" href="{% url "sales:sales_list" %}">Ventas</a>
+      </div>
+    </div>
+  </li>
   {% endif %}
   
 

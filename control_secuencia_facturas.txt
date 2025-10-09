@@ -1,0 +1,2 @@
+from tus_app.models import ControlSequence
+ControlSequence.objects.create(name='sale_invoice', sequence_number=0)
