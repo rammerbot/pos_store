@@ -1,0 +1,316 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Factura - Tienda RammerBot</title>
+    <style>
+        /* Reset completo para impresión térmica */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        /* Configuración específica para impresoras térmicas de 80mm */
+        @page {
+            size: 80mm auto;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace; /* Fuente monoespaciada para mejor alineación */
+            font-size: 10px;
+            line-height: 1.2;
+            color: #000;
+            margin: 0;
+            padding: 0;
+            width: 80mm;
+            background: white;
+        }
+        
+        .receipt-container {
+            width: 80mm;
+            margin: 0;
+            padding: 3mm;
+            overflow: hidden;
+        }
+        
+        /* Encabezado */
+        .header {
+            text-align: center;
+            border-bottom: 1px dashed #000;
+            padding-bottom: 4px;
+            margin-bottom: 4px;
+        }
+        
+        .company-name {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+        }
+        
+        .company-address {
+            font-size: 9px;
+            margin-bottom: 2px;
+        }
+        
+        .invoice-title {
+            font-size: 11px;
+            font-weight: bold;
+            margin: 4px 0;
+        }
+        
+        /* Información de la factura */
+        .invoice-info {
+            margin: 6px 0;
+        }
+        
+        .info-row {
+            display: flex;
+            margin-bottom: 2px;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            min-width: 25mm;
+        }
+        
+        .info-value {
+            flex: 1;
+        }
+        
+        /* Tabla de productos optimizada */
+        .products-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 6px 0;
+            font-size: 9px;
+        }
+        
+        .products-table th {
+            text-align: left;
+            border-bottom: 1px solid #000;
+            padding: 3px 1px;
+            font-weight: bold;
+        }
+        
+        .products-table td {
+            padding: 2px 1px;
+            vertical-align: top;
+        }
+        
+        .product-code {
+            width: 12mm;
+        }
+        
+        .product-quantity {
+            width: 8mm;
+            text-align: right;
+        }
+        
+        .product-price {
+            width: 15mm;
+            text-align: right;
+        }
+        
+        .product-subtotal {
+            width: 15mm;
+            text-align: right;
+        }
+        
+        .product-name {
+            font-style: italic;
+            color: #000;
+            font-size: 8px;
+        }
+        
+        /* Totales */
+        .totals-section {
+            margin-top: 8px;
+            border-top: 1px dashed #000;
+            padding-top: 6px;
+        }
+        
+        .totals-table {
+            width: 100%;
+            font-size: 10px;
+        }
+        
+        .totals-table td {
+            padding: 2px 0;
+        }
+        
+        .amount-column {
+            text-align: right;
+            font-weight: bold;
+        }
+        
+        .total-row {
+            border-top: 1px solid #000;
+            font-weight: bold;
+            font-size: 11px;
+        }
+        
+        /* Pie de página */
+        .footer {
+            margin-top: 8px;
+            text-align: center;
+            font-size: 8px;
+            border-top: 1px dashed #000;
+            padding-top: 4px;
+        }
+        
+        /* Utilidades */
+        .text-right {
+            text-align: right;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .text-left {
+            text-align: left;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        /* Separadores */
+        .separator {
+            border-top: 1px dashed #000;
+            margin: 4px 0;
+        }
+        
+        .double-separator {
+            border-top: 2px solid #000;
+            margin: 6px 0;
+        }
+        
+        /* Estilos específicos para impresión */
+        @media print {
+            body {
+                width: 80mm;
+                margin: 0;
+                padding: 0;
+            }
+            
+            .receipt-container {
+                padding: 2mm;
+            }
+            
+            /* Ocultar elementos no necesarios en impresión */
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body onload="window.print(); setTimeout(function() { window.close(); }, 500);" class="receipt">
+    <div class="receipt-container">
+        <!-- Encabezado de la empresa -->
+        <div class="header">
+            <div class="company-name">Tienda RammerBot</div>
+            <div class="company-address">Calle principal de la Campiña 2</div>
+            <div class="invoice-title">FACTURA No. {{header.invoice_number}}</div>
+        </div>
+        
+        <!-- Información de la factura -->
+        <div class="invoice-info">
+            <div class="info-row">
+                <div class="info-label">Factura:</div>
+                <div class="info-value">{{header.invoice_number}}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Fecha:</div>
+                <div class="info-value">{{header.date}}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Cliente:</div>
+                <div class="info-value">{{header.customer.full_name}}</div>
+            </div>
+        </div>
+        
+        <div class="separator"></div>
+        
+        <!-- Tabla de productos -->
+        <table class="products-table">
+            <thead>
+                <tr>
+                    <th class="product-code">Código</th>
+                    <th class="product-quantity">Cant</th>
+                    <th class="product-price">P.Unit</th>
+                    <th class="product-subtotal">SubTotal</th>
+                    {% if header.has_discount %}
+                    <th class="text-right">Desc</th>
+                    {% endif %}
+                    <th class="text-right">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for obj in detail %}
+                <tr>
+                    <td class="text-left">{{obj.product.code}}</td>
+                    <td class="text-right">{{obj.quantity}}</td>
+                    <td class="text-right">{{obj.price}}</td>
+                    <td class="text-right">{{obj.subtotal}}</td>
+                    {% if header.has_discount %}
+                    <td class="text-right">{{obj.descuento}}</td>
+                    {% endif %}
+                    <td class="text-right">{{obj.total_price}}</td>
+                </tr>
+                <tr>
+                    <td colspan="{% if header.has_discount %}6{% else %}5{% endif %}" class="product-name">{{obj.product.name}}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <div class="separator"></div>
+        
+        <!-- Totales -->
+        <div class="totals-section">
+            <table class="totals-table">
+                <tr>
+                    <td>Sub Total:</td>
+                    <td class="amount-column">{{header.subtotal}}</td>
+                </tr>
+                
+                {% if header.tax > 0 %}
+                <tr>
+                    <td>IVA:</td>
+                    <td class="amount-column">{{header.tax}}</td>
+                </tr>
+                {% endif %}
+                
+                {% if header.has_discount %}
+                <tr>
+                    <td>Descuento:</td>
+                    <td class="amount-column">{{header.discount}}</td>
+                </tr>
+                {% endif %}
+                
+                <tr class="total-row">
+                    <td><strong>TOTAL:</strong></td>
+                    <td class="amount-column"><strong>{{header.total_amount}}</strong></td>
+                </tr>
+            </table>
+        </div>
+        
+        <div class="double-separator"></div>
+        
+        <!-- Pie de página -->
+        <div class="footer">
+            <div>Creada por: {{header.created_by}}</div>
+            <div>Fecha: {{header.date}}</div>
+            <div>&copy; RammerBot DEBS Consultores</div>
+            <div>rammer@rammerbot.com</div>
+        </div>
+    </div>
+</body>
+</html>

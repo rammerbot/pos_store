@@ -101,7 +101,7 @@ def update_purchase_oder_delete(sender, instance, **kwargs):
     
     product = Product.objects.filter(pk=id_product).first()
     if product:
-        quantity = int(product.stock) - int(instance.quantity)
+        quantity = float(product.stock) - float(instance.quantity)
         product.stock = quantity
         product.save()
 
@@ -112,7 +112,7 @@ def update_purchase_oder_save(sender, instance, created, **kwargs):
     
     product = Product.objects.filter(pk=id_product).first()
     if product:
-        quantity = int(product.stock) + int(instance.quantity)
+        quantity = float(product.stock) + float(instance.quantity)
         product.stock = quantity
         product.last_buy_date = buy_date
         product.save()

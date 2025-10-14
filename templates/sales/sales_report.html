@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reporte Analítico de Compras - Sistema de Compras</title>
+    <title>Reporte Analítico de Ventas - Sistema de Ventas</title>
     <style type="text/css">
         @page {
             size: letter;
@@ -151,14 +151,6 @@
             font-size: 9px;
         }
         
-        .supplier-header {
-            background-color: #3498db;
-            color: white;
-            font-weight: bold;
-            padding: 4px;
-            margin-top: 5px;
-        }
-        
         .category-header {
             background-color: #95a5a6;
             color: white;
@@ -167,14 +159,12 @@
             margin-top: 5px;
         }
         
-        .positive-trend {
-            color: #27ae60;
+        .supplier-header {
+            background-color: #3498db;
+            color: white;
             font-weight: bold;
-        }
-        
-        .negative-trend {
-            color: #e74c3c;
-            font-weight: bold;
+            padding: 4px;
+            margin-top: 5px;
         }
         
         @media print {
@@ -198,13 +188,13 @@
                 -webkit-print-color-adjust: exact;
             }
             
-            .supplier-header {
-                background-color: #3498db !important;
+            .category-header {
+                background-color: #95a5a6 !important;
                 -webkit-print-color-adjust: exact;
             }
             
-            .category-header {
-                background-color: #95a5a6 !important;
+            .supplier-header {
+                background-color: #3498db !important;
                 -webkit-print-color-adjust: exact;
             }
         }
@@ -212,8 +202,8 @@
 </head>
 <body>
     <div class="header">
-        <div class="company-name">Sistema de Compras</div>
-        <div class="report-title">Reporte Analítico de Compras</div>
+        <div class="company-name">Sistema de Ventas</div>
+        <div class="report-title">Reporte Analítico de Ventas</div>
         <div class="report-date">Generado el: {{ today|date:"d/m/Y H:i" }}</div>
     </div>
     
@@ -233,71 +223,123 @@
 
     <!-- KPIs Principales -->
     <div class="section">
-        <div class="section-title">MÉTRICAS PRINCIPALES DE COMPRAS</div>
+        <div class="section-title">MÉTRICAS PRINCIPALES</div>
         <div class="kpi-container">
             <div class="kpi-item">
                 <div class="kpi-value">${{ total_general|floatformat:2 }}</div>
-                <div class="kpi-label">TOTAL COMPRADO</div>
+                <div class="kpi-label">TOTAL VENDIDO</div>
             </div>
             <div class="kpi-item">
-                <div class="kpi-value">{{ count_purchases }}</div>
-                <div class="kpi-label">ÓRDENES DE COMPRA</div>
+                <div class="kpi-value">{{ count_sales }}</div>
+                <div class="kpi-label">VENTAS REALIZADAS</div>
             </div>
             <div class="kpi-item">
-                <div class="kpi-value">${{ avg_purchase_value|floatformat:2 }}</div>
-                <div class="kpi-label">VALOR PROMEDIO</div>
+                <div class="kpi-value">${{ avg_sale_value|floatformat:2 }}</div>
+                <div class="kpi-label">TICKET PROMEDIO</div>
             </div>
             <div class="kpi-item">
                 <div class="kpi-value">{{ discount_percentage|floatformat:1 }}%</div>
-                <div class="kpi-label">DESCUENTO OBTENIDO</div>
+                <div class="kpi-label">DESCUENTO APLICADO</div>
             </div>
         </div>
     </div>
 
-    <!-- Compras por Proveedor -->
+    <!-- Ventas por Categoría -->
     <div class="section">
-        <div class="section-title">COMPRAS POR PROVEEDOR</div>
+        <div class="section-title">VENTAS POR CATEGORÍA</div>
         <table class="table">
             <thead>
                 <tr>
-                    <th>Proveedor</th>
-                    <th>Órdenes</th>
-                    <th>Subtotal</th>
-                    <th>Descuento</th>
-                    <th>IVA</th>
-                    <th>Total</th>
+                    <th>Categoría</th>
+                    <th>Unidades Vendidas</th>
+                    <th>Ingresos</th>
                     <th>% del Total</th>
                 </tr>
             </thead>
             <tbody>
-                {% for supplier in suppliers_totals %}
+                {% for category in sales_by_category %}
                 <tr>
-                    <td>{{ supplier.supplier__name }}</td>
-                    <td class="amount">{{ supplier.cantidad_compras }}</td>
-                    <td class="amount">${{ supplier.subtotal_compras|default:0|floatformat:2 }}</td>
-                    <td class="amount">${{ supplier.discount_compras|default:0|floatformat:2 }}</td>
-                    <td class="amount">${{ supplier.tax_compras|default:0|floatformat:2 }}</td>
-                    <td class="amount">${{ supplier.total_compras|default:0|floatformat:2 }}</td>
-                    <td class="amount">
-                        {% if total_general > 0 %}
-                            {{ supplier.porcentaje_total|floatformat:1 }}%
-                        {% else %}
-                            0%
-                        {% endif %}
-                    </td>
+                    <td>{{ category.product__subcategory__category__name }}</td>
+                    <td class="amount">{{ category.total_ventas }}</td>
+                    <td class="amount">${{ category.total_ingresos|floatformat:2 }}</td>
+                    <td class="amount">{{ category.porcentaje_ingresos|floatformat:1 }}%</td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="7" class="no-data">No hay datos de compras por proveedor</td>
+                    <td colspan="4" class="no-data">No hay datos de ventas por categoría</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 
-    <!-- Productos Más Comprados por Proveedor -->
+    <!-- Ventas por Proveedor -->
     <div class="section">
-        <div class="section-title">PRODUCTOS MÁS COMPRADOS POR PROVEEDOR</div>
+        <div class="section-title">VENTAS POR PROVEEDOR (MARCA)</div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Proveedor/Marca</th>
+                    <th>Productos Diferentes</th>
+                    <th>Unidades Vendidas</th>
+                    <th>Ingresos</th>
+                    <th>% del Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for supplier in sales_by_supplier %}
+                <tr>
+                    <td>{{ supplier.product__brand__name }}</td>
+                    <td class="amount">{{ supplier.cantidad_productos }}</td>
+                    <td class="amount">{{ supplier.total_ventas }}</td>
+                    <td class="amount">${{ supplier.total_ingresos|floatformat:2 }}</td>
+                    <td class="amount">{{ supplier.porcentaje_ingresos|floatformat:1 }}%</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="no-data">No hay datos de ventas por proveedor</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Productos Más Vendidos por Categoría -->
+    <div class="section">
+        <div class="section-title">PRODUCTOS MÁS VENDIDOS POR CATEGORÍA</div>
+        {% regroup top_products_by_category by product__subcategory__category__name as categories %}
+        {% for category in categories %}
+        <div class="category-header">{{ category.grouper }}</div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Código</th>
+                    <th>Unidades</th>
+                    <th>Ingresos</th>
+                    <th>Veces Vendido</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in category.list|slice:":5" %}
+                <tr>
+                    <td>{{ product.product__name }}</td>
+                    <td>{{ product.product__code }}</td>
+                    <td class="amount">{{ product.total_vendido }}</td>
+                    <td class="amount">${{ product.total_ingresos|floatformat:2 }}</td>
+                    <td class="amount">{{ product.cantidad_ventas }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% empty %}
+        <div class="no-data">No hay datos de productos vendidos</div>
+        {% endfor %}
+    </div>
+
+    <!-- Productos Más Vendidos por Proveedor -->
+    <div class="section">
+        <div class="section-title">PRODUCTOS MÁS VENDIDOS POR PROVEEDOR</div>
         {% regroup top_products_by_supplier by product__brand__name as suppliers %}
         {% for supplier in suppliers %}
         <div class="supplier-header">{{ supplier.grouper }}</div>
@@ -307,9 +349,9 @@
                     <th>Producto</th>
                     <th>Código</th>
                     <th>Unidades</th>
-                    <th>Costo Total</th>
+                    <th>Ingresos</th>
                     <th>Precio Promedio</th>
-                    <th>Veces Comprado</th>
+                    <th>Veces Vendido</th>
                 </tr>
             </thead>
             <tbody>
@@ -317,128 +359,77 @@
                 <tr>
                     <td>{{ product.product__name }}</td>
                     <td>{{ product.product__code }}</td>
-                    <td class="amount">{{ product.total_comprado }}</td>
-                    <td class="amount">${{ product.total_costo|floatformat:2 }}</td>
+                    <td class="amount">{{ product.total_vendido }}</td>
+                    <td class="amount">${{ product.total_ingresos|floatformat:2 }}</td>
                     <td class="amount">${{ product.precio_promedio|floatformat:2 }}</td>
-                    <td class="amount">{{ product.cantidad_compras }}</td>
+                    <td class="amount">{{ product.cantidad_ventas }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
         {% empty %}
-        <div class="no-data">No hay datos de productos comprados</div>
+        <div class="no-data">No hay datos de productos por proveedor</div>
         {% endfor %}
     </div>
 
-    <!-- Productos Más Comprados por Categoría -->
+    <!-- Top Clientes -->
     <div class="section">
-        <div class="section-title">PRODUCTOS MÁS COMPRADOS POR CATEGORÍA</div>
-        {% regroup top_products_by_category by product__subcategory__category__name as categories %}
-        {% for category in categories %}
-        <div class="category-header">{{ category.grouper }}</div>
+        <div class="section-title">TOP 10 CLIENTES</div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Cliente</th>
+                    <th>Compras</th>
+                    <th>Total Gastado</th>
+                    <th>Descuento</th>
+                    <th>Ticket Promedio</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for customer in sales_by_customer %}
+                <tr>
+                    <td>{{ customer.customer__name }} {{ customer.customer__last_name }}</td>
+                    <td class="amount">{{ customer.cantidad_compras }}</td>
+                    <td class="amount">${{ customer.total_compras|floatformat:2 }}</td>
+                    <td class="amount">${{ customer.discount_compras|floatformat:2 }}</td>
+                    <td class="amount">${{ customer.total_compras|floatformat:2 }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="no-data">No hay datos de clientes</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Productos con Mejor Desempeño -->
+    <div class="section">
+        <div class="section-title">PRODUCTOS CON MEJOR DESEMPEÑO</div>
         <table class="table">
             <thead>
                 <tr>
                     <th>Producto</th>
                     <th>Proveedor</th>
+                    <th>Código</th>
                     <th>Unidades</th>
-                    <th>Costo Total</th>
-                    <th>Precio Unitario</th>
+                    <th>Ingresos</th>
+                    <th>Precio Promedio</th>
                 </tr>
             </thead>
             <tbody>
-                {% for product in category.list|slice:":5" %}
+                {% for product in high_margin_products %}
                 <tr>
                     <td>{{ product.product__name }}</td>
                     <td>{{ product.product__brand__name }}</td>
-                    <td class="amount">{{ product.total_comprado }}</td>
-                    <td class="amount">${{ product.total_costo|floatformat:2 }}</td>
-                    <td class="amount">${{ product.precio_promedio|floatformat:2 }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% empty %}
-        <div class="no-data">No hay datos de productos por categoría</div>
-        {% endfor %}
-    </div>
-
-    <!-- Detalle de Compras Individuales -->
-    <div class="section">
-        <div class="section-title">DETALLE DE ÓRDENES DE COMPRA</div>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>No. Orden</th>
-                    <th>Proveedor</th>
-                    <th>Fecha</th>
-                    <th>Subtotal</th>
-                    <th>Descuento</th>
-                    <th>IVA</th>
-                    <th>Total</th>
-                    <th>Estado</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for purchase in purchases %}
-                <tr>
-                    <td>{{ purchase.order_number }}</td>
-                    <td>{{ purchase.supplier.name }}</td>
-                    <td>{{ purchase.buy_date|date:"d/m/Y" }}</td>
-                    <td class="amount">${{ purchase.subtotal|default:0|floatformat:2 }}</td>
-                    <td class="amount">${{ purchase.discount|default:0|floatformat:2 }}</td>
-                    <td class="amount">${{ purchase.tax|default:0|floatformat:2 }}</td>
-                    <td class="amount">${{ purchase.total_amount|default:0|floatformat:2 }}</td>
-                    <td>
-                        {% if purchase.status %}
-                            <span class="positive-trend">Activo</span>
-                        {% else %}
-                            <span class="negative-trend">Inactivo</span>
-                        {% endif %}
-                    </td>
+                    <td>{{ product.product__code }}</td>
+                    <td class="amount">{{ product.cantidad_vendida }}</td>
+                    <td class="amount">${{ product.total_ingresos|floatformat:2 }}</td>
+                    <td class="amount">${{ product.precio_venta_promedio|floatformat:2 }}</td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="8" class="no-data">No se encontraron órdenes de compra</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Tendencias de Compras Mensuales -->
-    <div class="section">
-        <div class="section-title">TENDENCIA MENSUAL DE COMPRAS</div>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Mes</th>
-                    <th>Órdenes</th>
-                    <th>Total Compras</th>
-                    <th>Promedio por Orden</th>
-                    <th>Tendencia</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for monthly in monthly_purchases %}
-                <tr>
-                    <td>{{ monthly.month|date:"M Y" }}</td>
-                    <td class="amount">{{ monthly.cantidad_compras }}</td>
-                    <td class="amount">${{ monthly.total_compras|floatformat:2 }}</td>
-                    <td class="amount">${{ monthly.promedio_orden|floatformat:2 }}</td>
-                    <td>
-                        {% if monthly.tendencia > 0 %}
-                            <span class="positive-trend">↗ +{{ monthly.tendencia|floatformat:1 }}%</span>
-                        {% elif monthly.tendencia < 0 %}
-                            <span class="negative-trend">↘ {{ monthly.tendencia|floatformat:1 }}%</span>
-                        {% else %}
-                            <span>→ Estable</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="5" class="no-data">No hay datos de tendencias mensuales</td>
+                    <td colspan="6" class="no-data">No hay datos de productos</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -450,42 +441,46 @@
         <div class="section-title">RESUMEN GENERAL</div>
         <div class="summary-box">
             <strong>Totales del Período:</strong><br>
-            • Órdenes de compra: {{ count_purchases }}<br>
+            • Ventas realizadas: {{ count_sales }}<br>
             • Subtotal: ${{ subtotal_general|floatformat:2 }}<br>
-            • Descuentos obtenidos: ${{ discount_general|floatformat:2 }}<br>
-            • IVA pagado: ${{ tax_general|floatformat:2 }}<br>
+            • Descuentos aplicados: ${{ discount_general|floatformat:2 }}<br>
+            • Impuestos: ${{ tax_general|floatformat:2 }}<br>
             • <strong>Total General: ${{ total_general|floatformat:2 }}</strong><br>
-            • Valor promedio por orden: ${{ avg_purchase_value|floatformat:2 }}<br>
+            • Ticket promedio: ${{ avg_sale_value|floatformat:2 }}<br>
             • Porcentaje de descuento: {{ discount_percentage|floatformat:1 }}%
         </div>
     </div>
 
-    <!-- Análisis y Recomendaciones -->
+    <!-- Recomendaciones -->
     <div class="section">
         <div class="section-title">ANÁLISIS Y RECOMENDACIONES</div>
         <div class="summary-box">
-            {% if discount_percentage < 5 %}
-            <strong>💡 OPORTUNIDAD DE AHORRO:</strong> Los descuentos obtenidos son bajos ({{ discount_percentage|floatformat:1 }}%). Considere negociar mejores condiciones.<br>
+            {% if discount_percentage > 10 %}
+            <strong>⚠️ ALTO NIVEL DE DESCUENTOS:</strong> Se están aplicando descuentos del {{ discount_percentage|floatformat:1 }}%.<br>
             {% endif %}
             
-            {% for supplier in suppliers_totals|slice:":3" %}
-            <strong>🏭 PROVEEDOR ESTRATÉGICO:</strong> {{ supplier.supplier__name }} representa el {{ supplier.porcentaje_total|floatformat:1 }}% del volumen de compras.<br>
+            {% if avg_sale_value < 50 %}
+            <strong>📊 TICKET PROMEDIO BAJO:</strong> Considere estrategias para aumentar el valor promedio por venta.<br>
+            {% endif %}
+            
+            {% for category in sales_by_category|slice:":3" %}
+            <strong>🏆 CATEGORÍA DESTACADA:</strong> {{ category.product__subcategory__category__name }} genera {{ category.porcentaje_ingresos|floatformat:1 }}% de los ingresos.<br>
             {% endfor %}
             
-            {% if avg_purchase_value > 1000 %}
-            <strong>📊 VOLUMEN ALTO:</strong> Las órdenes tienen un valor promedio alto (${{ avg_purchase_value|floatformat:2 }}). Evalúe división de pedidos.<br>
-            {% endif %}
+            {% for supplier in sales_by_supplier|slice:":3" %}
+            <strong>🏭 PROVEEDOR CLAVE:</strong> {{ supplier.product__brand__name }} aporta {{ supplier.porcentaje_ingresos|floatformat:1 }}% de los ingresos.<br>
+            {% endfor %}
             
-            <strong>🎯 RECOMENDACIONES:</strong><br>
-            • Consolidar compras con proveedores estratégicos<br>
-            • Negociar mejores descuentos por volumen<br>
-            • Diversificar proveedores para categorías críticas<br>
-            • Establecer contratos a largo plazo con proveedores clave
+            <strong>💡 SUGERENCIAS:</strong><br>
+            • Fortalecer inventario en categorías y proveedores de alto rendimiento<br>
+            • Desarrollar promociones para productos con menor movimiento<br>
+            • Programas de fidelización para clientes top<br>
+            • Negociar mejores condiciones con proveedores clave
         </div>
     </div>
 
     <div class="footer">
-        Documento generado automáticamente por el Sistema de Compras | 
+        Documento generado automáticamente por el Sistema de Ventas | 
         Página <span class="pageNumber"></span> de <span class="totalPages"></span>
     </div>
 </body>

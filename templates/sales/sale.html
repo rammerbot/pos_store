@@ -96,6 +96,7 @@
                                                     <thead>
                                                         <th>Codigo</th>        
                                                         <th class="all">Producto</th>
+                                                        <th class="all">Disponible</th>
                                                         <th class="all">Acciones</th>
                                                     </thead>
                                                     <tbody>
@@ -103,9 +104,19 @@
                                                         <tr>
                                                         <td>{{ item.code }}</td>
                                                         <td>{{ item.name}}</td>
+                                                        <td>{{ item.stock}}</td>
                                                         <td>
-                                                            <button type="button" class="btn btn-success "
-                                                            onclick="selectProducto({{item.id}},'{{item.name}}',{{item.price}}, {{item.code}})" > <i class="far fa-plus-square"></i></button>
+                                                            <button type="button"
+                                                                class="btn btn-info {% if item.stock <= 0 %}btn-danger{% endif %}"
+                                                                {% if item.stock <= 0 %} disabled {% endif %}
+                                                                data-id="{{ item.id }}"
+                                                                data-name="{{ item.name|escapejs }}"
+                                                                data-price="{{ item.price }}"
+                                                                data-code="{{ item.code|escapejs }}"
+                                                                data-stock="{{ item.stock }}"
+                                                                onclick="selectProductoFromButton(this)">
+                                                                <i class="far fa-plus-square"></i>
+                                                            </button>
                                                         </td>
                                                         </tr>
                                                         {% endfor %}
@@ -133,7 +144,9 @@
                                             </div>
                                             <label for="id_descuento_detalle" class="col-sm-2 col-form-label">Desc. %:</label>
                                             <div class="col-sm-2">
-                                                <input type="text" class="form-control" name="id_descuento_detalle" id="id_descuento_detalle" value="00"> 
+                                                <input type="text" class="form-control" name="id_descuento" id="id_descuento" value="00">
+                                                <input type="text" hidden class="form-control" name="id_descuento_detalle" id="id_descuento_detalle" value="00">
+                                                 
                                             </div>
                                             <label for="id_impuesto_detalle" class="col-sm-2 col-form-label">IVA%:</label>
                                             <div class="col-sm-2">
@@ -479,7 +492,7 @@
             }
         });
 
-        $('#id_cantidad_detalle,#id_precio_detalle,#id_descuento_detalle, #id_impuesto_detalle').change(function(){
+        $('#id_cantidad_detalle,#id_precio_detalle,#id_descuento, #id_impuesto_detalle').change(function(){
             calcular_detalle();
         });
 
@@ -511,60 +524,90 @@
         /*Fin Validar Envío de Detalle */
     });
 
-    function selectProducto(id,name, price, code) {
-        $("#id_cantidad_detalle").val(0);
-        $('#id_precio_detalle').val(parseFloat(price));
+    function selectProductoFromButton(btn) {
+        const id    = btn.dataset.id;
+        const name  = btn.dataset.name || btn.getAttribute('data-name');
+        const price = parseFloat(btn.dataset.price) || 0;
+        const code  = btn.dataset.code;
+        const stock = parseFloat(btn.dataset.stock) || 0;
+
+        $("#id_cantidad_detalle").val(1); // Cambiar a 1 en lugar de 0
+        $('#id_precio_detalle').val(parseFloat(price).toFixed(2));
+        $('#id_descuento').val(0);
         $('#id_descuento_detalle').val(0);
         $('#id_impuesto').val(0);
+        $('#id_impuesto_detalle').prop('checked', false);
 
         $('#id_sub_total_detalle').val(0);
         $('#id_total_detalle').val(0);
 
-        $("#id_id_producto").val(+id);
+        $("#id_id_producto").val(id);
         $('#id_descripcion_producto').val(name);
         $('#id_cantidad_detalle').focus();
         $('#id_cantidad_detalle').select();
 
+        // Calcular automáticamente al seleccionar producto
+        calcular_detalle();
+        
         $('.table').DataTable().search('').draw();
     }
 
-   function calcular_detalle() {
-        var cant, prec, desc, stotal, total, impuesto;
+    function calcular_detalle() {
+        let cant, prec, descPorcentaje, descMonto, stotal, total, impuesto;
 
-        cant = $("#id_cantidad_detalle").val();
-        cant = cant === "" ? 0 : +cant;
+        cant = parseFloat($("#id_cantidad_detalle").val()) || 0;
         cant = cant < 0 ? 0 : cant;
 
-        prec = $('#id_precio_detalle').val();
-        prec = prec === "" ? 0 : +prec;
+        prec = parseFloat($('#id_precio_detalle').val()) || 0;
         prec = prec < 0 ? 0 : prec;
 
-        desc = $('#id_descuento_detalle').val();
-        desc = desc === "" ? 0 : +desc;
-        desc = desc < 0 ? 0 : desc;
-        desc = desc > (cant * prec) ? 0 : desc;
+        descPorcentaje = parseFloat($('#id_descuento').val()) || 0;
+        descPorcentaje = descPorcentaje < 0 ? 0 : descPorcentaje;
+        descPorcentaje = descPorcentaje > 100 ? 100 : descPorcentaje;
 
         stotal = cant * prec;
 
+        // 🔸 Obtener stock disponible del producto actual
+        const stock = parseFloat($('button[data-id="' + $("#id_id_producto").val() + '"]').data('stock')) || 0;
+
+        // 🔸 Validación: cantidad no puede superar stock
+        if (cant > stock) {
+            $("#id_cantidad_detalle").val(stock); // Corrige el valor
+            Swal.fire({
+                icon: 'error',
+                title: 'Cantidad inválida',
+                text: `Solo hay ${stock} unidades disponibles en inventario.`,
+                timer: 2000,
+                showConfirmButton: false
+            });
+            cant = stock;
+        }
+
+        // Calcular IVA (16%)
         if ($("#id_impuesto_detalle").is(":checked")) {
             impuesto = stotal * 0.16;
         } else {
             impuesto = 0;
         }
 
-        total = (stotal + impuesto) -((stotal + impuesto)*(desc /100));
+        // Calcular descuento en monto (sobre subtotal + IVA)
+        descMonto = (stotal + impuesto) * (descPorcentaje / 100);
+        total = (stotal + impuesto) - descMonto;
 
+        // Actualizar campos
         $('#id_cantidad_detalle').val(cant);
-        $('#id_precio_detalle').val(prec);
-        $('#id_descuento_detalle').val(desc);
+        $('#id_precio_detalle').val(prec.toFixed(2));
+        $('#id_descuento_detalle').val(descMonto.toFixed(2));
         $('#id_sub_total_detalle').val(stotal.toFixed(2));
         $('#id_total_detalle').val(total.toFixed(2));
         $('#id_impuesto').val(impuesto.toFixed(2));
     }
 
+
     function clear_Detail(){
         $('#id_cantidad_detalle').val(0);
         $('#id_precio_detalle').val(0);
+        $('#id_descuento').val(0);
         $('#id_descuento_detalle').val(0);
         $('#id_impuesto_detalle').prop('checked', false);
 
@@ -576,7 +619,8 @@
         $('#id_descripcion_producto').val('');
 
         $('.table').DataTable().search('').draw();
-        $("#id_proveedor").focus();
+        // Cambiar el focus a un campo que exista
+        $("#id_cantidad_detalle").focus();
     }
 
     $("#id_proveedor").focus();

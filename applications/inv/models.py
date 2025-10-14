@@ -93,13 +93,13 @@ class UnitMeasure(BaseModel):
 class Product(BaseModel):
     code = models.CharField("Codigo", max_length=50, unique=True)
     bar_code = models.CharField("Codigo de Barras", max_length=50, blank=True, unique=True, null=True)
-    name = models.CharField("Producto", max_length=100)
+    name = models.CharField(verbose_name="Producto", max_length=100)
     description = models.TextField("Descripcion", blank=True, null=True)
-    subcategory = models.ForeignKey(SubCategory, on_delete=models.CASCADE, related_name='products', blank=True, null=True)
-    brand = models.ForeignKey(Brand, on_delete=models.CASCADE, related_name='products', blank=True, null=True)
+    subcategory = models.ForeignKey(SubCategory, on_delete=models.CASCADE, related_name='products')
+    brand = models.ForeignKey(Brand, on_delete=models.CASCADE, related_name='products')
     price = models.DecimalField("Precio", max_digits=10, decimal_places=2, default=0.00)
     stock = models.PositiveIntegerField("Stock", default=0)
-    unit_measure = models.ForeignKey(UnitMeasure, on_delete=models.CASCADE, related_name='products', blank=True, null=True)
+    unit_measure = models.ForeignKey(UnitMeasure, on_delete=models.CASCADE, related_name='products')
     last_purchase_price = models.DecimalField("Ultimo Precio de Compra", max_digits=10, decimal_places=2, default=0.00)
     last_buy_date = models.DateField("Ultima Fecha de Compra", blank=True, null=True)
 

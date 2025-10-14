@@ -173,6 +173,17 @@ def purchase_order_view(request, purchase_id=None):
             if header:
                 header.save()
                 purchase_id = header.id
+                
+                # CAMBIO: Redirigir a la edición de la factura recién creada
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': True,
+                        'message': 'Factura creada correctamente',
+                        'redirect_url': reverse_lazy('purchases:purchase_update', kwargs={'purchase_id': purchase_id})
+                    })
+                else:
+                    # Redirigir al formulario de edición de la factura recién creada
+                    return redirect("purchases:purchase_update", purchase_id=purchase_id)
         else:
             header = PurchaseOrder.objects.filter(pk=purchase_id).first()
             if header:
@@ -183,14 +194,7 @@ def purchase_order_view(request, purchase_id=None):
                 header.modified_by = request.user.id
                 header.save()
         
-        if not purchase_id:
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Error al crear la orden de compra'
-                })
-            return redirect("purchases:purchase_list")
-        
+        # Esta parte solo se ejecuta para facturas existentes (cuando purchase_id ya existe)
         product = request.POST.get("id_id_producto")
         quantity = request.POST.get("id_cantidad_detalle")
         price = request.POST.get("id_precio_detalle")

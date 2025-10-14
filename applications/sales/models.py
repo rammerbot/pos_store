@@ -1,6 +1,7 @@
 from django.db import models, transaction
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
+from django.db.models import Sum
 
 from applications.home.models import BaseModel
 from applications.inv.models import Product
@@ -116,7 +117,7 @@ class SaleDetail(BaseModel):
     total_price = models.DecimalField('Precio Total', max_digits=10, decimal_places=2)
 
     def __str__(self):
-        return f'{self.product.name} - {self.quantity} x {self.price} = {self.total_price}'
+        return f'{self.product.name} - {self.quantity} x {self.unit_price} = {self.total_price}'
     
     def save(self):
         self.subtotal = float(self.quantity) * float(self.unit_price)
@@ -127,3 +128,39 @@ class SaleDetail(BaseModel):
         verbose_name = 'Detalle de Venta'
         verbose_name_plural = 'Detalles de Ventas'
         ordering = ['-sale__date']
+
+        permissions = [
+            ('supervisor_cashier_envoice',' Permiso para agregar o quitar elementos de una factura (devoluciones)')
+        ]
+
+
+@receiver(post_delete, sender=SaleDetail)
+def update_sale_delete(sender, instance, **kwargs):
+    id_product = instance.product.id
+    id_sale = instance.sale.id
+
+    header = SaleDetail.objects.filter(pk=id_sale).first()
+    if header:
+            sub_total = SaleDetail.objects.filter(purchase_order=id_sale).aggregate(Sum('subtotal'))
+            discount = SaleDetail.objects.filter(purchase_order=id_sale).aggregate(Sum('discount'))
+            tax = SaleDetail.objects.filter(purchase_order=id_sale).aggregate(Sum('tax'))
+            header.subtotal = sub_total["subtotal__sum"]
+            header.discount = discount["discount__sum"]
+            header.tax = tax["tax__sum"]
+            header.save()
+    
+    product = Product.objects.filter(pk=id_product).first()
+    if product:
+        quantity = int(product.stock) + int(instance.quantity)
+        product.stock = quantity
+        product.save()
+
+@receiver(post_save, sender=SaleDetail)
+def update_sale_save(sender, instance, created, **kwargs):
+    id_product = instance.product.id
+    
+    product = Product.objects.filter(pk=id_product).first()
+    if product:
+        quantity = float(product.stock) - float(instance.quantity)
+        product.stock = quantity
+        product.save()
