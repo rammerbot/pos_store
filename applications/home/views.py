@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.views import LoginView, LogoutView
 from django.views.generic import TemplateView, ListView, CreateView, UpdateView, DeleteView, View
@@ -7,9 +9,17 @@ from django.urls import reverse_lazy
 from django.contrib.auth.models import User, Group
 from django.http import JsonResponse
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from django.db.models import Sum, Count, Avg, Q
+from django.db.models.functions import TruncMonth, TruncDay
 
+from applications.inv.models import Product, Category, Brand
+from applications.sales.models import Sale, SaleDetail, Customer
+from applications.purchases.models import PurchaseOrder, Supplier
 from .forms import CustomUserCreationForm, CustomUserChangeForm
 from .mixins import AdminRequiredMixin, SellerRequiredMixin
+
 
 # Create your views here.
 
@@ -125,3 +135,113 @@ class NewLoginView(LoginView):
 # logout View
 class NewLogoutView(LogoutView):
     next_page = '/'
+
+
+
+
+@login_required
+def dashboard_view(request):
+    # Fechas para filtros
+    today = timezone.now().date()
+    start_of_month = today.replace(day=1)
+    start_of_week = today - timedelta(days=today.weekday())
+    
+    # Ventas del mes
+    monthly_sales = Sale.objects.filter(
+        date__gte=start_of_month, 
+        status=True
+    ).aggregate(
+        total=Sum('total_amount'),
+        count=Count('id'),
+        avg=Avg('total_amount')
+    )
+    
+    # Ventas de la semana
+    weekly_sales = Sale.objects.filter(
+        date__gte=start_of_week,
+        status=True
+    ).aggregate(
+        total=Sum('total_amount')
+    )
+    
+    # Productos más vendidos del mes
+    top_products = SaleDetail.objects.filter(
+        sale__date__gte=start_of_month,
+        sale__status=True,
+        status=True
+    ).values(
+        'product__name',
+        'product__code'
+    ).annotate(
+        total_sold=Sum('quantity'),
+        total_revenue=Sum('total_price')
+    ).order_by('-total_sold')[:10]
+    
+    # Productos con stock bajo (menos de 10 unidades)
+    low_stock_products = Product.objects.filter(
+        stock__lt=10,
+        status=True
+    ).order_by('stock')[:10]
+    
+    # Compras del mes
+    monthly_purchases = PurchaseOrder.objects.filter(
+        buy_date__gte=start_of_month,
+        status=True
+    ).aggregate(
+        total=Sum('total_amount'),
+        count=Count('id')
+    )
+    
+    # Ventas por día (últimos 7 días)
+    last_7_days = today - timedelta(days=7)
+    daily_sales = Sale.objects.filter(
+        date__gte=last_7_days,
+        status=True
+    ).annotate(
+        day=TruncDay('date')
+    ).values('day').annotate(
+        total=Sum('total_amount'),
+        count=Count('id')
+    ).order_by('day')
+    
+    # Métricas generales
+    total_products = Product.objects.filter(status=True).count()
+    total_customers = Customer.objects.filter(status=True).count()
+    total_suppliers = Supplier.objects.filter(status=True).count()
+    
+    # Productos por categoría
+    products_by_category = Product.objects.filter(
+        status=True
+    ).values(
+        'subcategory__category__name'
+    ).annotate(
+        count=Count('id')
+    ).order_by('-count')
+    
+    # Ventas por categoría
+    sales_by_category = SaleDetail.objects.filter(
+        sale__status=True,
+        status=True
+    ).values(
+        'product__subcategory__category__name'
+    ).annotate(
+        total_sales=Sum('total_price'),
+        total_units=Sum('quantity')
+    ).order_by('-total_sales')[:5]
+    
+    context = {
+        'today': today,
+        'monthly_sales': monthly_sales,
+        'weekly_sales': weekly_sales,
+        'top_products': top_products,
+        'low_stock_products': low_stock_products,
+        'monthly_purchases': monthly_purchases,
+        'daily_sales': daily_sales,
+        'total_products': total_products,
+        'total_customers': total_customers,
+        'total_suppliers': total_suppliers,
+        'products_by_category': products_by_category,
+        'sales_by_category': sales_by_category,
+    }
+    
+    return render(request, 'home/dashboard.html', context)

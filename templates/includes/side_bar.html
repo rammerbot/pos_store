@@ -15,9 +15,10 @@
 
   <!-- Nav Item - Dashboard -->
   <li class="nav-item">
-    <a class="nav-link" href="index.html">
-      <i class="fas fa-fw fa-tachometer-alt"></i>
-      <span>Dashboard</span></a>
+    <a class="nav-link" href="{% url 'home:dashboard' %}">
+        <i class="fas fa-fw fa-tachometer-alt"></i>
+        <span>Dashboard</span>
+    </a>
   </li>
 
   <!-- Divider -->
@@ -64,7 +65,7 @@
   <!-- Nav Item - Administrar Compras -->
   <li class="nav-item">
     <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePurchases" aria-expanded="true" aria-controls="collapsePurchases">
-      <i class="fas fa-fw fa-shopping-cart"></i>
+      <i class="fas fa-fw fa-chart-area"></i>
       <span>Administrar Compras</span>
     </a>
     <div id="collapsePurchases" class="collapse" aria-labelledby="headingPurchases" data-parent="#accordionSidebar">
@@ -91,29 +92,7 @@
     </div>
   </li>
   {% endif %}
-  
 
-  <!-- Divider -->
-  <hr class="sidebar-divider">
-
-  <!-- Heading -->
-  <div class="sidebar-heading">
-    Addons
-  </div>
-
-  <!-- Nav Item - Charts -->
-  <li class="nav-item">
-    <a class="nav-link" href="charts.html">
-      <i class="fas fa-fw fa-chart-area"></i>
-      <span>Charts</span></a>
-  </li>
-
-  <!-- Nav Item - Tables -->
-  <li class="nav-item">
-    <a class="nav-link" href="tables.html">
-      <i class="fas fa-fw fa-table"></i>
-      <span>Tables</span></a>
-  </li>
 
   <!-- Divider -->
   <hr class="sidebar-divider d-none d-md-block">

@@ -100,6 +100,9 @@ class Sale(BaseModel):
         verbose_name = 'Venta'
         verbose_name_plural = 'Ventas'
         ordering = ['-date']
+        permissions = [
+            ('supervisor_cashier_envoice',' Permiso para agregar o quitar elementos de una factura (devoluciones)')
+            ]
 
     def toggle_status(self):
         self.status = not self.status
@@ -130,7 +133,7 @@ class SaleDetail(BaseModel):
         ordering = ['-sale__date']
 
         permissions = [
-            ('supervisor_cashier_envoice',' Permiso para agregar o quitar elementos de una factura (devoluciones)')
+            ('supervisor_cashier_envoice_detail',' Permiso para agregar o quitar elementos de una factura (devoluciones)')
         ]
 
 

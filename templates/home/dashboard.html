@@ -1,0 +1,483 @@
+{% extends 'layout.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Sistema de Gestión{% endblock %}
+
+{% block content %}
+{% include "includes/side_bar.html" %}
+
+<!-- Content Wrapper -->
+<div id="content-wrapper" class="d-flex flex-column">
+    <!-- Main Content -->
+    <div id="content">
+        {% include "includes/header.html" %}
+        
+        <!-- Begin Page Content -->
+        <div class="container-fluid">
+            <!-- Page Heading -->
+            <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                <h1 class="h3 mb-0 text-gray-800">Dashboard</h1>
+                <small class="text-muted">Actualizado: {{ today }}</small>
+            </div>
+
+            <!-- Métricas Principales -->
+            <div class="row">
+                <!-- Ventas del Mes -->
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-primary shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                        Ventas del Mes
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        ${{ monthly_sales.total|default:0|floatformat:2 }}
+                                    </div>
+                                    <div class="text-xs text-muted mt-1">
+                                        {{ monthly_sales.count|default:0 }} ventas • Promedio: ${{ monthly_sales.avg|default:0|floatformat:2 }}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ventas de la Semana -->
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-success shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                        Ventas de la Semana
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        ${{ weekly_sales.total|default:0|floatformat:2 }}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Compras del Mes -->
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-info shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                        Compras del Mes
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        ${{ monthly_purchases.total|default:0|floatformat:2 }}
+                                    </div>
+                                    <div class="text-xs text-muted mt-1">
+                                        {{ monthly_purchases.count|default:0 }} órdenes
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-shopping-cart fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Productos con Stock Bajo -->
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-warning shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                        Productos Stock Bajo
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        {{ low_stock_products|length }}
+                                    </div>
+                                    <div class="text-xs text-muted mt-1">
+                                        Menos de 10 unidades
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Segunda Fila de Métricas -->
+            <div class="row">
+                <!-- Total Productos -->
+                <div class="col-xl-2 col-md-4 mb-4">
+                    <div class="card border-left-secondary shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">
+                                        Productos
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_products }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-boxes fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Total Clientes -->
+                <div class="col-xl-2 col-md-4 mb-4">
+                    <div class="card border-left-success shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                        Clientes
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_customers }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-users fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Total Proveedores -->
+                <div class="col-xl-2 col-md-4 mb-4">
+                    <div class="card border-left-info shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                        Proveedores
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_suppliers }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-truck fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ticket Promedio -->
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-primary shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                        Ticket Promedio
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        ${{ monthly_sales.avg|default:0|floatformat:2 }}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-receipt fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Margen Estimado -->
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-warning shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                        Margen Estimado
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        {% widthratio monthly_sales.total|default:0 monthly_purchases.total|default:1 100 as margin %}
+                                        {{ margin|floatformat:0 }}%
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-percentage fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráficos y Tablas -->
+            <div class="row">
+                <!-- Productos Más Vendidos -->
+                <div class="col-xl-6 col-lg-6">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                            <h6 class="m-0 font-weight-bold text-primary">Productos Más Vendidos (Mes)</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-sm" width="100%" cellspacing="0">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th>Producto</th>
+                                            <th>Unidades</th>
+                                            <th>Ingresos</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for product in top_products %}
+                                        <tr>
+                                            <td>{{ product.product__name }}</td>
+                                            <td class="text-center">{{ product.total_sold }}</td>
+                                            <td class="text-right">${{ product.total_revenue|floatformat:2 }}</td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="3" class="text-center text-muted">No hay datos de ventas</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Productos Stock Bajo -->
+                <div class="col-xl-6 col-lg-6">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                            <h6 class="m-0 font-weight-bold text-warning">Productos con Stock Bajo</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-sm" width="100%" cellspacing="0">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th>Producto</th>
+                                            <th>Stock</th>
+                                            <th>Última Compra</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for product in low_stock_products %}
+                                        <tr>
+                                            <td>{{ product.name }}</td>
+                                            <td class="text-center">
+                                                <span class="badge badge-{% if product.stock < 5 %}danger{% else %}warning{% endif %}">
+                                                    {{ product.stock }}
+                                                </span>
+                                            </td>
+                                            <td class="text-center">
+                                                {% if product.last_buy_date %}
+                                                    {{ product.last_buy_date|date:"d/m/Y" }}
+                                                {% else %}
+                                                    <span class="text-muted">Nunca</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="3" class="text-center text-muted">Todo el stock está en niveles normales</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tercera Fila -->
+            <div class="row">
+                <!-- Ventas por Categoría -->
+                <div class="col-xl-4 col-lg-4">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Ventas por Categoría</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-sm">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th>Categoría</th>
+                                            <th>Ventas</th>
+                                            <th>Unidades</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for category in sales_by_category %}
+                                        <tr>
+                                            <td>{{ category.product__subcategory__category__name }}</td>
+                                            <td class="text-right">${{ category.total_sales|floatformat:2 }}</td>
+                                            <td class="text-center">{{ category.total_units }}</td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="3" class="text-center text-muted">No hay datos</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Productos por Categoría -->
+                <div class="col-xl-4 col-lg-4">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-info">Productos por Categoría</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-sm">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th>Categoría</th>
+                                            <th>Productos</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for category in products_by_category %}
+                                        <tr>
+                                            <td>{{ category.subcategory__category__name }}</td>
+                                            <td class="text-center">{{ category.count }}</td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="2" class="text-center text-muted">No hay datos</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ventas Recientes (Últimos 7 días) -->
+                <div class="col-xl-4 col-lg-4">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-success">Ventas Recientes (7 días)</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-sm">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th>Fecha</th>
+                                            <th>Ventas</th>
+                                            <th>Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for day in daily_sales %}
+                                        <tr>
+                                            <td>{{ day.day|date:"d/m" }}</td>
+                                            <td class="text-center">{{ day.count }}</td>
+                                            <td class="text-right">${{ day.total|floatformat:2 }}</td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="3" class="text-center text-muted">No hay ventas recientes</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alertas y Recomendaciones -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-warning">Alertas y Recomendaciones</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% if low_stock_products %}
+                                <div class="col-md-6">
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                        <strong>Stock Bajo:</strong> Tienes {{ low_stock_products|length }} productos con stock bajo. Considera realizar pedidos.
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if monthly_sales.total and monthly_purchases.total and monthly_sales.total < monthly_purchases.total %}
+                                <div class="col-md-6">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle"></i>
+                                        <strong>Análisis:</strong> Las ventas son menores que las compras. Revisa tu estrategia de ventas.
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if monthly_sales.count and monthly_sales.count < 10 %}
+                                <div class="col-md-6">
+                                    <div class="alert alert-secondary">
+                                        <i class="fas fa-chart-line"></i>
+                                        <strong>Oportunidad:</strong> Pocas ventas este mes. Considera promociones.
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                <div class="col-md-6">
+                                    <div class="alert alert-success">
+                                        <i class="fas fa-lightbulb"></i>
+                                        <strong>Tips:</strong> Revisa los productos más vendidos para optimizar tu inventario.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- /.container-fluid -->
+    </div>
+    <!-- End of Main Content -->
+
+    {% include "includes/footer.html" %}
+</div>
+<!-- End of Content Wrapper -->
+{% endblock %}
+
+{% block JavaScript %}
+<script>
+    // Auto-refresh cada 5 minutos
+    setTimeout(function() {
+        window.location.reload();
+    }, 300000); // 300000 ms = 5 minutos
+
+    // Tooltips
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip();
+        
+        // Sidebar toggle
+        $("#sidebarToggle").click();
+    });
+</script>
+{% endblock %}

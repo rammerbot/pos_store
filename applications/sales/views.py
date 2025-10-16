@@ -1,4 +1,5 @@
 import datetime
+import json
 
 from django.contrib import messages
 from django.shortcuts import render, redirect
@@ -11,12 +12,15 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from django.contrib.auth import authenticate
+from django.db import transaction
 
 from .models import Customer, Sale, SaleDetail
 from applications.inv.models import Product
 from .forms import CustomerForm
 from applications.home.mixins import AdminRequiredMixin, SellerRequiredMixin
 from .forms import CustomerForm, SaleForm
+
 
 
 # Create your views here.
@@ -306,6 +310,81 @@ class SaleDeleteView(LoginRequiredMixin, AdminRequiredMixin, View):
     def update_sale_totals(self, sale_order):
         """Recalcular totales después de eliminar un item"""
         items = SaleDetail.objects.filter(sale=sale_order)
+        
+        subtotal = items.aggregate(Sum('subtotal'))['subtotal__sum'] or 0
+        discount = items.aggregate(Sum('discount'))['discount__sum'] or 0
+        tax = items.aggregate(Sum('tax'))['tax__sum'] or 0
+        
+        sale_order.subtotal = subtotal
+        sale_order.discount = discount
+        sale_order.tax = tax
+        sale_order.total_amount = subtotal - discount + tax
+        sale_order.save()
+
+
+class SaleAnularView(LoginRequiredMixin, View):
+    def post(self, request, sale_id, pk):
+        try:
+            data = json.loads(request.body)
+            admin_password = data.get('admin_password')
+            
+            # Verificar contraseña de administrador
+            user = authenticate(username=request.user.username, password=admin_password)
+            if not user or not user.is_staff:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Contraseña de administrador incorrecta o usuario no tiene permisos'
+                }, status=403)
+            
+            with transaction.atomic():
+                sale_item = SaleDetail.objects.get(pk=pk, sale_id=sale_id)
+                sale_order = sale_item.sale
+                
+                # Verificar que el item no esté ya anulado
+                if not sale_item.status:
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'Este item ya está anulado'
+                    })
+                
+                # Anular el item (cambiar status a False)
+                sale_item.status = False
+                sale_item.modified_by = request.user.id  # ← CORREGIDO: usar ID en lugar de instancia
+                sale_item.save()
+                
+                # Devolver el producto al inventario
+                product = sale_item.product
+                product.stock += sale_item.quantity
+                product.save()
+                
+                # Recalcular totales de la factura
+                self.update_sale_totals(sale_order)
+                
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Item anulado correctamente',
+                    'updated_totals': {
+                        'subtotal': str(sale_order.subtotal),
+                        'discount': str(sale_order.discount),
+                        'tax': str(sale_order.tax),
+                        'total_amount': str(sale_order.total_amount),
+                    }
+                })
+                
+        except SaleDetail.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'Item no encontrado'
+            }, status=404)
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=500)
+    
+    def update_sale_totals(self, sale_order):
+        """Recalcular totales considerando solo items activos"""
+        items = SaleDetail.objects.filter(sale=sale_order, status=True)
         
         subtotal = items.aggregate(Sum('subtotal'))['subtotal__sum'] or 0
         discount = items.aggregate(Sum('discount'))['discount__sum'] or 0

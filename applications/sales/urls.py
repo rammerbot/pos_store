@@ -19,6 +19,7 @@ urlpatterns = [
     path('sales/update/<int:sale_id>/', views.sale_order_view, name='sale_update'),
     path('sales/delete/<int:sale_id>/<int:pk>/', views.SaleDeleteView.as_view(), name='sale_delete'),
     path('sales/print_invoice/<int:id>', reports.print_invoice, name='print_invoice'),
+    path('sales/anular/<int:sale_id>/<int:pk>/', views.SaleAnularView.as_view(), name='sale_anular'),
     
     # Report URLs
     path('sales/report/pdf/', reports.sales_report_to_pdf, name='sales_report_pdf'),

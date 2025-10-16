@@ -13,4 +13,5 @@ urlpatterns = [
     path('update/<int:pk>/', UserUpdateView.as_view(), name='update_user'),
     path('delete/<int:pk>/', UserDeleteView.as_view(), name='user_delete'),
     path('toggle-status/', ToggleUserStatusView.as_view(), name='toggle_user_status'),
+    path('dasboards/', dashboard_view, name='dashboard'),
 ]
