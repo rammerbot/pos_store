@@ -51,7 +51,7 @@ class Customer(BaseModel):
     gender = models.CharField('Genero', max_length=10, choices=GENDER_)
 
     def __str__(self):
-        return self.name
+        return f"{self.dni} - {self.name}"
     
     def full_name(self):
         return f'{self.name} {self.last_name}'
@@ -59,6 +59,7 @@ class Customer(BaseModel):
     def save(self):
         self.name = self.name.title()
         self.last_name = self.last_name.title()
+        self.status = True
         super(Customer, self).save()
     
     class Meta:

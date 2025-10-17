@@ -125,6 +125,7 @@ class SalesListView(LoginRequiredMixin, ListView):
 def sale_order_view(request, sale_id=None):
     template_name = "sales/sale.html"
     products = Product.objects.filter(status=True)
+    customers = Customer.objects.filter(status=True)
     sale_form = {}
     context = {}
 
@@ -148,7 +149,7 @@ def sale_order_view(request, sale_id=None):
         else:
             sale_item = None
         
-        context = {'products': products, 'header': header, 'sale_items': sale_item, 'sale_form': sale_form}
+        context = {'products': products, 'header': header, 'sale_items': sale_item, 'sale_form': sale_form, 'customers': customers}
  
 
     if request.method == 'POST':
@@ -395,3 +396,18 @@ class SaleAnularView(LoginRequiredMixin, View):
         sale_order.tax = tax
         sale_order.total_amount = subtotal - discount + tax
         sale_order.save()
+
+
+def get_customers_json(request):
+    customers = Customer.objects.filter(status=True).values('id', 'name', 'last_name', 'dni')
+    
+    # Formatear los datos para el select
+    customers_list = []
+    for customer in customers:
+        customers_list.append({
+            'id': customer['id'],
+            'full_name': f"{customer['name']} {customer['last_name']}",
+            'dni': customer['dni']
+        })
+    
+    return JsonResponse({'customers': customers_list})

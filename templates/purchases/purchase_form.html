@@ -8,216 +8,225 @@
 <!-- Incluir SweetAlert2 CSS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
-{% include "includes/side_bar.html" %}
-    <form method="post" id="frmCompras">
-        {% csrf_token %}
-        <div class="col-xl-12 col-md-12 mb-12">
-            {% if header %}
-            <div class="card border-left-warning shadow h-100 py-2">
-            {% else %}
-            <div class="card border-left-success shadow h-100 py-2">
-            {% endif %}
-                <div class="card-body">
-                        <div class="row no-gutters align-items-center">
-                            <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                    {% if header %} Editar {% else %} Nueva {% endif %} Compra
-                                </div>
-                                <div class="dropdown-divider"></div>
-                                <div class="row">
-                                    <!-- Inicio Izquierda -->
-                                    <div class="col-6">
-                                        <!-- Inicio Encabezado -->
-                                        <div class="form-group row">
-                                            <label for="supplier" class="col-sm-2 col-form-label">Proveedor:</label>
-                                            <div class="col-sm-10">
-                                              {{ purchase_form.supplier }}
+    {% include "includes/side_bar.html" %}
+    <div id="content-wrapper" class="d-flex flex-column">
+        <!-- Main Content -->
+        <div id="content">
+            {% include "includes/header.html" %}
+            <!-- Begin Page Content -->
+            <div class="container-fluid">
+                <form method="post" id="frmCompras">
+                    {% csrf_token %}
+                    <div class="col-xl-12 col-md-12 mb-12">
+                        {% if header %}
+                        <div class="card border-left-warning shadow h-100 py-2">
+                        {% else %}
+                        <div class="card border-left-success shadow h-100 py-2">
+                        {% endif %}
+                            <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                                {% if header %} Editar {% else %} Nueva {% endif %} Compra
                                             </div>
-                                        </div>
-                                        <div class="row">
-                                            <div class="col-6">
-                                                <div class="form-group">
-                                                    <label for="id_buy_date">Fecha Compra:</label>
-                                                    {{ purchase_form.buy_date}}
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="description">Descripción:</label>
-                                                    {{ purchase_form.observations}}
-                                                </div>
-                                            </div>
-                                            <div class="col-6">
-                                                <div class="form-group">
-                                                    <label for="order_number">No. Factura:</label>
-                                                    {{ purchase_form.order_number}}
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="id_order_date">Fecha Factura:</label>
-                                                    {{ purchase_form.order_date}}
-                                                </div>
-                                                <div class="row">
-                                                    <div class="col">
-                                                        <label for="subtotal">Sub Total:</label>
+                                            <div class="dropdown-divider"></div>
+                                            <div class="row">
+                                                <!-- Inicio Izquierda -->
+                                                <div class="col-6">
+                                                    <!-- Inicio Encabezado -->
+                                                    <div class="form-group row">
+                                                        <label for="supplier" class="col-sm-2 col-form-label">Proveedor:</label>
+                                                        <div class="col-sm-10">
+                                                        {{ purchase_form.supplier }}
+                                                        </div>
                                                     </div>
-                                                    <div class="col">
-                                                        {{  purchase_form.subtotal }}
+                                                    <div class="row">
+                                                        <div class="col-6">
+                                                            <div class="form-group">
+                                                                <label for="id_buy_date">Fecha Compra:</label>
+                                                                {{ purchase_form.buy_date}}
+                                                            </div>
+                                                            <div class="form-group">
+                                                                <label for="description">Descripción:</label>
+                                                                {{ purchase_form.observations}}
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-6">
+                                                            <div class="form-group">
+                                                                <label for="order_number">No. Factura:</label>
+                                                                {{ purchase_form.order_number}}
+                                                            </div>
+                                                            <div class="form-group">
+                                                                <label for="id_order_date">Fecha Factura:</label>
+                                                                {{ purchase_form.order_date}}
+                                                            </div>
+                                                            <div class="row">
+                                                                <div class="col">
+                                                                    <label for="subtotal">Sub Total:</label>
+                                                                </div>
+                                                                <div class="col">
+                                                                    {{  purchase_form.subtotal }}
+                                                                </div>
+                                                            </div>
+                                                            <div class="row">
+                                                                <div class="col">
+                                                                    <label for="discount">Descuento:</label>
+                                                                </div>
+                                                                <div class="col">
+                                                                    {{  purchase_form.discount }}
+                                                                </div>
+                                                            </div>
+                                                            <!-- Nuevo campo para mostrar IVA del encabezado -->
+                                                            <div class="row">
+                                                                <div class="col">
+                                                                    <label for="tax">IVA:</label>
+                                                                </div>
+                                                                <div class="col">
+                                                                    {{  purchase_form.tax }}
+                                                                </div>
+                                                            </div>
+                                                            <div class="row">
+                                                                <div class="col">
+                                                                    <label for="total_amount">Total:</label>
+                                                                </div>
+                                                                <div class="col">
+                                                                    {{  purchase_form.total_amount }}
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     </div>
+                                                    <!-- Fin Encabezado -->
                                                 </div>
-                                                <div class="row">
-                                                    <div class="col">
-                                                        <label for="discount">Descuento:</label>
+                                                <!-- Fin Izquierda -->
+                                                <!-- Inicio Derecha -->
+                                                <div class="col-6">
+                                                    <div class="row">
+                                                        <div class="col">
+                                                            <table class="table table-striped table-hover dt-responsive table-sm nowrap tbl-productos" style="width:100%">
+                                                                <thead>
+                                                                    <th>Codigo</th>        
+                                                                    <th class="all">Producto</th>
+                                                                    <th class="all">Acciones</th>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {% for item in products %}
+                                                                    <tr>
+                                                                    <td>{{ item.code }}</td>
+                                                                    <td>{{ item.name}}</td>
+                                                                    <td>
+                                                                        <button type="button" class="btn btn-success "
+                                                                        onclick="selectProducto({{item.id}},'{{item.name}}', {{item.code}})" > <i class="far fa-plus-square"></i></button>
+                                                                    </td>
+                                                                    </tr>
+                                                                    {% endfor %}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
                                                     </div>
-                                                    <div class="col">
-                                                        {{  purchase_form.discount }}
+                                                    <div class="form-group row">
+                                                        <label for="id_id_producto" class="col-sm-3 col-form-label">Producto</label>
+                                                        <div class="col-sm-2">
+                                                            <input type="text" readonly class="form-control-plaintext" name="id_id_producto" id="id_id_producto" value="" required>
+                                                        </div>
+                                                        <div class="col-sm-7">
+                                                            <input type="text" readonly class="form-control-plaintext" id="id_descripcion_producto" value="" required>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                <!-- Nuevo campo para mostrar IVA del encabezado -->
-                                                <div class="row">
-                                                    <div class="col">
-                                                        <label for="tax">IVA:</label>
-                                                    </div>
-                                                    <div class="col">
-                                                        {{  purchase_form.tax }}
-                                                    </div>
-                                                </div>
-                                                <div class="row">
-                                                    <div class="col">
-                                                        <label for="total_amount">Total:</label>
-                                                    </div>
-                                                    <div class="col">
-                                                        {{  purchase_form.total_amount }}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <!-- Fin Encabezado -->
-                                    </div>
-                                    <!-- Fin Izquierda -->
-                                    <!-- Inicio Derecha -->
-                                    <div class="col-6">
-                                        <div class="row">
-                                            <div class="col">
-                                                <table class="table table-striped table-hover dt-responsive table-sm nowrap tbl-productos" style="width:100%">
-                                                    <thead>
-                                                        <th>Codigo</th>        
-                                                        <th class="all">Producto</th>
-                                                        <th class="all">Acciones</th>
-                                                    </thead>
-                                                    <tbody>
-                                                        {% for item in products %}
-                                                        <tr>
-                                                        <td>{{ item.code }}</td>
-                                                        <td>{{ item.name}}</td>
-                                                        <td>
-                                                            <button type="button" class="btn btn-success "
-                                                            onclick="selectProducto({{item.id}},'{{item.name}}',{{item.price}}, {{item.code}})" > <i class="far fa-plus-square"></i></button>
-                                                        </td>
-                                                        </tr>
-                                                        {% endfor %}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                        <div class="form-group row">
-                                            <label for="id_id_producto" class="col-sm-3 col-form-label">Producto</label>
-                                            <div class="col-sm-2">
-                                                <input type="text" readonly class="form-control-plaintext" name="id_id_producto" id="id_id_producto" value="" required>
-                                            </div>
-                                            <div class="col-sm-7">
-                                                <input type="text" readonly class="form-control-plaintext" id="id_descripcion_producto" value="" required>
-                                            </div>
-                                        </div>
-                                        <div class="form-group row">
-                                            <label for="id_cantidad_detalle" class="col-sm-2 col-form-label">Cant.:</label>
-                                            <div class="col-sm-2">
-                                                <input type="number" class="form-control" name="id_cantidad_detalle" id="id_cantidad_detalle" value="00" required>
-                                            </div>
-                                            <label for="id_precio_detalle" class="col-sm-2 col-form-label">Precio:</label>
-                                            <div class="col-sm-2">
-                                                <input type="number" readonly class="form-control-plaintext" name="id_precio_detalle" id="id_precio_detalle" value="00" required>
-                                            </div>
-                                            <label for="id_descuento_detalle" class="col-sm-2 col-form-label">Desc. %:</label>
-                                            <div class="col-sm-2">
-                                                <input type="text" class="form-control" name="id_descuento" id="id_descuento" value="00"> 
-                                                <input type="text" class="form-control" name="id_descuento_detalle" id="id_descuento_detalle" hidden value="00">
-                                            </div>
-                                            <label for="id_impuesto_detalle" class="col-sm-2 col-form-label">IVA%:</label>
-                                            <div class="col-sm-2">
-                                                <input type="checkbox" class="form-control" name="id_impuesto_detalle" id="id_impuesto_detalle" >
-                                            </div>
-                                            <div class="col-sm-2">
-                                                <input type="number" readonly class="form-control-plaintext" name="id_impuesto" id="id_impuesto" > 
-                                            </div>
+                                                    <div class="form-group row">
+                                                        <label for="id_cantidad_detalle" class="col-sm-2 col-form-label">Cant.:</label>
+                                                        <div class="col-sm-2">
+                                                            <input type="number" class="form-control" name="id_cantidad_detalle" id="id_cantidad_detalle" value="00" required>
+                                                        </div>
+                                                        <label for="id_precio_detalle" class="col-sm-2 col-form-label">Precio:</label>
+                                                        <div class="col-sm-2">
+                                                            <input type="number" class="form-control-plaintext" name="id_precio_detalle" id="id_precio_detalle" value="00" required>
+                                                        </div>
+                                                        <label for="id_descuento_detalle" class="col-sm-2 col-form-label">Desc. %:</label>
+                                                        <div class="col-sm-2">
+                                                            <input type="text" class="form-control" name="id_descuento" id="id_descuento" value="00"> 
+                                                            <input type="text" class="form-control" name="id_descuento_detalle" id="id_descuento_detalle" hidden value="00">
+                                                        </div>
+                                                        <label for="id_impuesto_detalle" class="col-sm-2 col-form-label">IVA%:</label>
+                                                        <div class="col-sm-2">
+                                                            <input type="checkbox" class="form-control" name="id_impuesto_detalle" id="id_impuesto_detalle" >
+                                                        </div>
+                                                        <div class="col-sm-2">
+                                                            <input type="number" readonly class="form-control-plaintext" name="id_impuesto" id="id_impuesto" > 
+                                                        </div>
 
+                                                    </div>
+                                                    <div class="form-group row">
+                                                        <label for="subtotal" class="col-sm-2 col-form-label">S. Total:</label>
+                                                        <div class="col-sm-4">
+                                                            <input type="text" readonly class="form-control-plaintext" name="id_sub_total_detalle" id="id_sub_total_detalle" value="00">
+                                                        </div>
+                                                        <label for="id_total_detalle" class="col-sm-2 col-form-label">Total:</label>
+                                                        <div class="col-sm-3">
+                                                            <input type="text" readonly class="form-control-plaintext col-sm-10" name="id_total_detalle" id="id_total_detalle" value="00">
+                                                        </div>
+                                                        <div class="col-sm-1">
+                                                            <button type="button" class="btn btn-sm col-sm-2" onclick="clear_Detail();"><i class="fa fa-minus-circle" aria-hidden="true"></i></button>
+                                                        </div>
+                                                    </div>
+                                                    <!-- Botones -->
+                                                    <div class="dropdown-divider"></div>
+                                                    <div class="row">
+                                                        <div class="col">
+                                                            <button type="submit" class="btn btn-success"><span class="fa fa-save"></span> Guardar</button>
+                                                            <a href="{% url 'purchases:purchase_list' %}" class="btn btn-danger"><i class="far fa-hand-point-left"></i> Cancelar</a>
+                                                        </div>
+                                                    </div>
+                                                    <!-- Fin Botones -->
+                                                </div>
+                                                <!-- Fin Derecha -->
+                                            </div>
+                                            <!-- Inicio Detalle -->
+                                            <div class="row">
+                                                <div class="col">
+                                                    <table class="table table-striped table-hover dt-responsive nowrap" style="width:100%" id="details-table">
+                                                        <thead>
+                                                            <th>Producto</th>        
+                                                            <th>Cantidad</th>
+                                                            <th>Precio</th>
+                                                            <th>Sub Total</th>
+                                                            <th>Desc.</th>
+                                                            <th>IVA</th>
+                                                            <th>Total</th>
+                                                            <th class="all">Acciones</th>
+                                                        </thead>
+                                                        <tbody>
+                                                            {% for item in purchase_items %}
+                                                            <tr id="item-{{ item.id }}">
+                                                                <td>{{ item.product.name }}</td>
+                                                                <td>{{ item.quantity }}</td>
+                                                                <td>${{ item.unit_price }}</td>
+                                                                <td>${{ item.subtotal }}</td>
+                                                                <td>${{ item.discount }}</td>
+                                                                <td>${{ item.tax }}</td>
+                                                                <td>${{ item.total_price }}</td>
+                                                                <td>
+                                                                    <button type="button" 
+                                                                            class="btn btn-danger btn-circle btn-sm" 
+                                                                            onclick="deleteItem({{ item.id }}, {{ header.id }})"
+                                                                            title="Eliminar item">
+                                                                        <i class="fas fa-trash-alt"></i>
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                            {% endfor %}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                            <!-- Fin Detalle -->
                                         </div>
-                                        <div class="form-group row">
-                                            <label for="subtotal" class="col-sm-2 col-form-label">S. Total:</label>
-                                            <div class="col-sm-4">
-                                                <input type="text" readonly class="form-control-plaintext" name="id_sub_total_detalle" id="id_sub_total_detalle" value="00">
-                                            </div>
-                                            <label for="id_total_detalle" class="col-sm-2 col-form-label">Total:</label>
-                                            <div class="col-sm-3">
-                                                <input type="text" readonly class="form-control-plaintext col-sm-10" name="id_total_detalle" id="id_total_detalle" value="00">
-                                            </div>
-                                            <div class="col-sm-1">
-                                                <button type="button" class="btn btn-sm col-sm-2" onclick="clear_Detail();"><i class="fa fa-minus-circle" aria-hidden="true"></i></button>
-                                            </div>
-                                        </div>
-                                        <!-- Botones -->
-                                        <div class="dropdown-divider"></div>
-                                        <div class="row">
-                                            <div class="col">
-                                                <button type="submit" class="btn btn-success"><span class="fa fa-save"></span> Guardar</button>
-                                                <a href="{% url 'purchases:purchase_list' %}" class="btn btn-danger"><i class="far fa-hand-point-left"></i> Cancelar</a>
-                                            </div>
-                                        </div>
-                                        <!-- Fin Botones -->
                                     </div>
-                                    <!-- Fin Derecha -->
-                                </div>
-                                <!-- Inicio Detalle -->
-                                <div class="row">
-                                    <div class="col">
-                                        <table class="table table-striped table-hover dt-responsive nowrap" style="width:100%" id="details-table">
-                                            <thead>
-                                                <th>Producto</th>        
-                                                <th>Cantidad</th>
-                                                <th>Precio</th>
-                                                <th>Sub Total</th>
-                                                <th>Desc.</th>
-                                                <th>IVA</th>
-                                                <th>Total</th>
-                                                <th class="all">Acciones</th>
-                                            </thead>
-                                            <tbody>
-                                                {% for item in purchase_items %}
-                                                <tr id="item-{{ item.id }}">
-                                                    <td>{{ item.product.name }}</td>
-                                                    <td>{{ item.quantity }}</td>
-                                                    <td>${{ item.unit_price }}</td>
-                                                    <td>${{ item.subtotal }}</td>
-                                                    <td>${{ item.discount }}</td>
-                                                    <td>${{ item.tax }}</td>
-                                                    <td>${{ item.total_price }}</td>
-                                                    <td>
-                                                        <button type="button" 
-                                                                class="btn btn-danger btn-circle btn-sm" 
-                                                                onclick="deleteItem({{ item.id }}, {{ header.id }})"
-                                                                title="Eliminar item">
-                                                            <i class="fas fa-trash-alt"></i>
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                                {% endfor %}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                                <!-- Fin Detalle -->
                             </div>
-                        </div>
-                </div>
+                    </div>
+                </form>
+            </div>
         </div>
-    </form>
+    </div>
 
     {% block modal %}
 <div class="modal fade" id="popup" >
@@ -533,9 +542,9 @@
         /*Fin Validar Envío de Detalle */
     });
 
-    function selectProducto(id, name, price, code, stock) {
+    function selectProducto(id, name,  code, stock) {
         $("#id_cantidad_detalle").val(1); // Cambiar a 1 en lugar de 0
-        $('#id_precio_detalle').val(parseFloat(price).toFixed(2));
+        $('#id_precio_detalle').val(0);
         $('#id_descuento').val(0);
         $('#id_descuento_detalle').val(0);
         $('#id_impuesto').val(0);

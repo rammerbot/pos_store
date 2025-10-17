@@ -36,9 +36,11 @@
                             <table class="table table-striped table-hover">
                                 <thead>
                                     <tr>
-                                        <th scope="col">ID</th>
+                                        <th scope="col">Codigo</th>
                                         <th scope="col">Nombre</th>
-                                        <th scope="col">Descripción</th>                                       
+                                        <th scope="col">Descripción</th>
+                                        <th scope="col">Precio</th>                                       
+                                        <th scope="col">Inventario</th>
                                         <th scope="col">Estado</th>
                                         <th scope="col">Acciones</th>
                                     </tr>
@@ -46,9 +48,11 @@
                                 <tbody>
                                     {% for product in products %}
                                     <tr>
-                                        <td>{{ product.id }}</td>
+                                        <td>{{ product.code }}</td>
                                         <td>{{ product.name }}</td>
                                         <td>{{ product.description|default:"-" }}</td>
+                                        <td>{{ product.price }} $</td>
+                                        <td>{{ product.stock }}</td>                                        
                                         <td>{% if product.status %}Activa{% else %}Inactiva{% endif %}</td>
                                         <td>
                                             <a class="btn btn-warning toggle-status" onclick="return open_modal('{% url 'inv:update_product' product.id %}')" href="#"><i class="fas fa-edit"></i>  Editar</a>
