@@ -30,6 +30,49 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Campos de contraseña SOLO para crear usuario -->
+                {% if not object %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>{{ form.password1.label }}</label>
+                            {{ form.password1 }}
+                            {% if form.password1.errors %}
+                            <div class="text-danger small">{{ form.password1.errors }}</div>
+                            {% endif %}
+                            {% if form.password1.help_text %}
+                            <small class="form-text text-muted">{{ form.password1.help_text }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>{{ form.password2.label }}</label>
+                            {{ form.password2 }}
+                            {% if form.password2.errors %}
+                            <div class="text-danger small">{{ form.password2.errors }}</div>
+                            {% endif %}
+                            {% if form.password2.help_text %}
+                            <small class="form-text text-muted">{{ form.password2.help_text }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <!-- Para edición, mostrar enlace para cambiar contraseña -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            <small>
+                                <i class="fas fa-info-circle"></i>
+                                Para cambiar la contraseña de este usuario, utilice la función específica de cambio de contraseña.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">

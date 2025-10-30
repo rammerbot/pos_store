@@ -22,8 +22,19 @@ urlpatterns = [
     path('sales/anular/<int:sale_id>/<int:pk>/', views.SaleAnularView.as_view(), name='sale_anular'),
     path('sales/get_customers/', views.get_customers_json, name='get_customers_json'),
     
+    # Control de Caja
+    path('cash/register/', views.CashRegisterView.as_view(), name='cash_register'),
+    path('cash/register/open/', views.OpenCashRegisterView.as_view(), name='open_cash_register'),
+    path('cash/register/close/', views.CloseCashRegisterView.as_view(), name='close_cash_register'),
+
     # Report URLs
     path('sales/report/pdf/', reports.sales_report_to_pdf, name='sales_report_pdf'),
     path('sales/report/filter/', reports.sales_report_filter, name='sales_report_filter'),
+    path('reports/sales/daily/', reports.daily_sales_report_to_pdf, name='daily_sales_report'),
     path('sales/print_invoice/<int:sale_id>/', reports.print_sale_invoice, name='print_sale_invoice'),
+    path('reports/sales/daily/select-date/', views.DailyReportSelectDateView.as_view(), name='daily_report_select_date'),
+
+    # Presupuestos
+    path('budget/create/', views.BudgetCreateView.as_view(), name='create_budget'),
+    path('budget/generate/pdf/', reports.generate_budget_pdf, name='generate_budget_pdf'),
 ]

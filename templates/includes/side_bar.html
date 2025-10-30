@@ -39,7 +39,10 @@
     <div id="collapseUsers" class="collapse" aria-labelledby="headingUsers" data-parent="#accordionSidebar">
       <div class="bg-white py-2 collapse-inner rounded">
         <h6 class="collapse-header">Administrar Usuarios</h6>
-        <a class="collapse-item" href="{% url "home:user_list" %}">Usuarios</a>
+        <a class="collapse-item" href="{% url "home:user_list" %}">
+          <i class="fas fa-user fa-sm fa-fw mr-2"></i>
+          Usuarios
+        </a>
       </div>
     </div>
   </li>
@@ -53,11 +56,26 @@
     <div id="collapseInventory" class="collapse" aria-labelledby="headingInventory" data-parent="#accordionSidebar">
       <div class="bg-white py-2 collapse-inner rounded">
         <h6 class="collapse-header">Administrar inventarios</h6>
-        <a class="collapse-item" href="{% url "inv:category_list" %}">Categorias</a>
-        <a class="collapse-item" href="{% url "inv:sub_category_list" %}">Sub Categorias</a>
-        <a class="collapse-item" href="{% url "inv:brand_list" %}">Marcas</a>
-        <a class="collapse-item" href="{% url "inv:unit_measure_list" %}">Unidades de Medidas</a>
-        <a class="collapse-item" href="{% url "inv:products_list" %}">Productos</a>
+        <a class="collapse-item" href="{% url "inv:category_list" %}">
+          <i class="fas fa-tags"></i>
+          Categorias
+        </a>
+        <a class="collapse-item" href="{% url "inv:sub_category_list" %}">
+          <i class="fas fa-layer-group"></i>
+          Sub Categorias
+        </a>
+        <a class="collapse-item" href="{% url "inv:brand_list" %}">
+          <i class="fas fa-trademark"></i>
+          Marcas
+        </a>
+        <a class="collapse-item" href="{% url "inv:unit_measure_list" %}">
+          <i class="fas fa-ruler"></i>
+          Unidades de Medidas
+        </a>
+        <a class="collapse-item" href="{% url "inv:products_list" %}">
+          <i class="fas fa-box"></i>
+          Productos
+        </a>
       </div>
     </div>
   </li>
@@ -71,8 +89,14 @@
     <div id="collapsePurchases" class="collapse" aria-labelledby="headingPurchases" data-parent="#accordionSidebar">
       <div class="bg-white py-2 collapse-inner rounded">
         <h6 class="collapse-header">Administrar Compras</h6>
-        <a class="collapse-item" href="{% url "purchases:suppliers_list" %}">Proveedores</a>
-        <a class="collapse-item" href="{% url "purchases:purchase_list" %}">Compras</a>
+        <a class="collapse-item" href="{% url "purchases:suppliers_list" %}">
+          <i class="fas fa-handshake"></i>
+          Proveedores
+        </a>
+        <a class="collapse-item" href="{% url "purchases:purchase_list" %}">
+        <i class="fas fa-truck"></i>
+          Compras
+        </a>
       </div>
     </div>
   </li>
@@ -86,8 +110,25 @@
     <div id="collapseSales" class="collapse" aria-labelledby="headingSales" data-parent="#accordionSidebar">
       <div class="bg-white py-2 collapse-inner rounded">
         <h6 class="collapse-header">Administrar Ventas</h6>
-        <a class="collapse-item" href="{% url "sales:customers_list" %}">Clientes</a>
-        <a class="collapse-item" href="{% url "sales:sales_list" %}">Ventas</a>
+        <a class="collapse-item" href="{% url "sales:customers_list" %}">
+          <i class="fas fa-user fa-sm fa-fw mr-2"></i>
+          Clientes
+        </a>
+        <a class="collapse-item" href="{% url "sales:sales_list" %}">
+          <i class="fas fa-fw fa-cash-register"></i>
+          Ventas
+        </a>
+        <a class="collapse-item" href="{% url "sales:create_budget" %}">
+            <i class="fas fa-fw fa-file-invoice-dollar"></i> Crear Presupuesto
+        </a>
+        <!-- Control de Caja -->
+        <a class="collapse-item" href="{% url "sales:cash_register" %}">
+            <i class="fas fa-fw fa-cash-register"></i> Control de Caja
+        </a>
+          <!-- Informe Diario -->
+        <a class="collapse-item" href="{% url "sales:daily_report_select_date" %}">
+            <i class="fas fa-fw fa-file-pdf"></i> Informe Diario
+        </a>
       </div>
     </div>
   </li>

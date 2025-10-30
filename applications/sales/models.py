@@ -2,6 +2,7 @@ from django.db import models, transaction
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.db.models import Sum
+from django.conf import settings
 
 from applications.home.models import BaseModel
 from applications.inv.models import Product
@@ -168,3 +169,122 @@ def update_sale_save(sender, instance, created, **kwargs):
         quantity = float(product.stock) - float(instance.quantity)
         product.stock = quantity
         product.save()
+
+
+class DailyReport(BaseModel):
+    """Modelo para registrar informes diarios generados"""
+    report_date = models.DateField('Fecha del Reporte', unique=True)
+    generated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    total_sales = models.DecimalField('Total Ventas', max_digits=10, decimal_places=2, default=0)
+    total_customers = models.PositiveIntegerField('Total Clientes', default=0)
+    total_products_sold = models.PositiveIntegerField('Total Productos Vendidos', default=0)
+    opening_balance = models.DecimalField('Saldo Inicial', max_digits=10, decimal_places=2, default=0)
+    closing_balance = models.DecimalField('Saldo Final', max_digits=10, decimal_places=2, default=0)
+    cash_difference = models.DecimalField('Diferencia en Caja', max_digits=10, decimal_places=2, default=0)
+    observations = models.TextField('Observaciones', blank=True, null=True)
+
+    class Meta:
+        verbose_name = 'Informe Diario'
+        verbose_name_plural = 'Informes Diarios'
+        ordering = ['-report_date']
+
+    def __str__(self):
+        return f'Informe {self.report_date}'
+
+class CashRegister(BaseModel):
+    """Modelo para control de caja"""
+    CASH_IN = 'in'
+    CASH_OUT = 'out'
+    CASH_OPEN = 'open'
+    CASH_CLOSE = 'close'
+    
+    OPERATION_TYPES = [
+        (CASH_OPEN, 'Apertura de Caja'),
+        (CASH_CLOSE, 'Cierre de Caja'),
+        (CASH_IN, 'Ingreso de Efectivo'),
+        (CASH_OUT, 'Retiro de Efectivo'),
+    ]
+
+    operation_type = models.CharField('Tipo de Operación', max_length=10, choices=OPERATION_TYPES)
+    amount = models.DecimalField('Monto', max_digits=10, decimal_places=2)
+    date = models.DateTimeField('Fecha y Hora', auto_now_add=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='cash_register_movements')
+    description = models.TextField('Descripción', blank=True, null=True)
+    current_balance = models.DecimalField('Saldo Actual', max_digits=10, decimal_places=2, default=0)
+
+    class Meta:
+        verbose_name = 'Movimiento de Caja'
+        verbose_name_plural = 'Movimientos de Caja'
+        ordering = ['-date']
+
+    def __str__(self):
+        return f'{self.get_operation_type_display()} - ${self.amount} - {self.date.strftime("%d/%m/%Y %H:%M")}'
+
+    def save(self, *args, **kwargs):
+        # Asignar el usuario actual si no hay created_by
+        if not self.created_by_id and hasattr(self, '_current_user'):
+            self.created_by = self._current_user
+        
+        # Calcular saldo actual basado en movimientos anteriores
+        if not self.pk:  # Solo para nuevos registros
+            last_balance = CashRegister.objects.filter(
+                status=True
+            ).order_by('-date').values_list('current_balance', flat=True).first()
+            
+            if last_balance is None:
+                last_balance = 0
+            
+            if self.operation_type == self.CASH_OPEN or self.operation_type == self.CASH_IN:
+                self.current_balance = last_balance + self.amount
+            elif self.operation_type == self.CASH_OUT:
+                self.current_balance = last_balance - self.amount
+            elif self.operation_type == self.CASH_CLOSE:
+                self.current_balance = 0  # Al cerrar caja, el saldo vuelve a 0
+        
+        super().save(*args, **kwargs)
+    """Modelo para control de caja"""
+    CASH_IN = 'in'
+    CASH_OUT = 'out'
+    CASH_OPEN = 'open'
+    CASH_CLOSE = 'close'
+    
+    OPERATION_TYPES = [
+        (CASH_OPEN, 'Apertura de Caja'),
+        (CASH_CLOSE, 'Cierre de Caja'),
+        (CASH_IN, 'Ingreso de Efectivo'),
+        (CASH_OUT, 'Retiro de Efectivo'),
+    ]
+
+    operation_type = models.CharField('Tipo de Operación', max_length=10, choices=OPERATION_TYPES)
+    amount = models.DecimalField('Monto', max_digits=10, decimal_places=2)
+    date = models.DateTimeField('Fecha y Hora', auto_now_add=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    description = models.TextField('Descripción', blank=True, null=True)
+    current_balance = models.DecimalField('Saldo Actual', max_digits=10, decimal_places=2, default=0)
+
+    class Meta:
+        verbose_name = 'Movimiento de Caja'
+        verbose_name_plural = 'Movimientos de Caja'
+        ordering = ['-date']
+
+    def __str__(self):
+        return f'{self.get_operation_type_display()} - ${self.amount} - {self.date.strftime("%d/%m/%Y %H:%M")}'
+
+    def save(self, *args, **kwargs):
+        # Calcular saldo actual basado en movimientos anteriores
+        if not self.pk:  # Solo para nuevos registros
+            last_balance = CashRegister.objects.filter(
+                status=True
+            ).order_by('-date').values_list('current_balance', flat=True).first()
+            
+            if last_balance is None:
+                last_balance = 0
+            
+            if self.operation_type == self.CASH_OPEN or self.operation_type == self.CASH_IN:
+                self.current_balance = last_balance + self.amount
+            elif self.operation_type == self.CASH_OUT:
+                self.current_balance = last_balance - self.amount
+            elif self.operation_type == self.CASH_CLOSE:
+                self.current_balance = 0  # Al cerrar caja, el saldo vuelve a 0
+        
+        super().save(*args, **kwargs)

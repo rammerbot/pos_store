@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Customer, Sale
+from .models import Customer, Sale, CashRegister, DailyReport
 
 # Forms for Customer
 class CustomerForm(forms.ModelForm):
@@ -48,3 +48,23 @@ class SaleForm(forms.ModelForm):
         self.fields['tax'].widget.attrs['readonly'] = True
         self.fields['total_amount'].widget.attrs['readonly'] = True
 
+
+
+class CashRegisterForm(forms.ModelForm):
+    class Meta:
+        model = CashRegister
+        fields = ['operation_type', 'amount', 'description']
+        widgets = {
+            'operation_type': forms.Select(attrs={'class': 'form-control'}),
+            'amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+
+class DailyReportForm(forms.ModelForm):
+    class Meta:
+        model = DailyReport
+        fields = ['opening_balance', 'observations']
+        widgets = {
+            'opening_balance': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+            'observations': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }

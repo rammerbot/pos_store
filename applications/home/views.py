@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.views import LoginView, LogoutView
 from django.views.generic import TemplateView, ListView, CreateView, UpdateView, DeleteView, View
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
@@ -245,3 +245,24 @@ def dashboard_view(request):
     }
     
     return render(request, 'home/dashboard.html', context)
+
+from django.contrib.auth.forms import PasswordChangeForm
+
+class UserChangePasswordView(LoginRequiredMixin, AdminRequiredMixin, PermissionRequiredMixin, View):
+    permission_required = 'auth.change_user'
+    
+    def post(self, request, pk):
+        user = get_object_or_404(User, pk=pk)
+        form = PasswordChangeForm(user, request.POST)
+        
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'✅ Contraseña de {user.username} actualizada exitosamente.')
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': True, 'message': 'Contraseña actualizada exitosamente'})
+            return redirect('home:user_list')
+        else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'errors': form.errors.get_json_data()})
+            messages.error(request, '❌ Error al actualizar la contraseña.')
+            return redirect('home:user_list')

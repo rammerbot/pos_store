@@ -120,7 +120,7 @@
                                                                     {% for item in products %}
                                                                     <tr>
                                                                     <td>{{ item.code }}</td>
-                                                                    <td>{{ item.name}}</td>
+                                                                    <td>{{ item.name|truncatechars:25}}</td>
                                                                     <td>{{ item.stock}}</td>
                                                                     <td>
                                                                         <button type="button"
@@ -832,9 +832,9 @@
             cant = stock;
         }
 
-        // Calcular IVA (16%)
+        // Calcular IVA (19%)
         if ($("#id_impuesto_detalle").is(":checked")) {
-            impuesto = stotal * 0.16;
+            impuesto = stotal * 0.19;
         } else {
             impuesto = 0;
         }
