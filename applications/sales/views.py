@@ -33,7 +33,7 @@ from .forms import CustomerForm, SaleForm
 # Create your views here.
 class CustomerListView(LoginRequiredMixin, AdminRequiredMixin, ListView):
     model = Customer
-    template_name = 'sales/Customers_list.html'
+    template_name = 'sales/customers_list.html'
     context_object_name = 'customers'
     login_url = reverse_lazy('home:login')
 

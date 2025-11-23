@@ -11,25 +11,25 @@
             {% include "includes/header.html" %}
             <!-- Begin Page Content -->
             <div class="container-fluid">
-                <form method="post">
+                <!-- AGREGA EL ACTION AQUÍ -->
+                <form method="post" role="form" 
+                action="{% if category %}{% url 'inv:update_category' category.id %}{% else %}{% url 'inv:create_category' %}{% endif %}"
+                enctype="multipart/form-data">
                     {% csrf_token %}
                     <div class="col-xl-10 col-md-10 mb-10">
                         <div class="card border-left-success shadow h-100 py-2">
                             <div class="card-body">
                                 <div class="row no-gutters align-items-center">
                                     <div class="col mr-2">
-                                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Nueva Categoria</div> 
+                                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">{% if category %}Editar{% else %}Nueva{% endif %} Categoria</div> 
                                         {{ form.as_p }}  
                                         <a href="{% url 'inv:category_list' %}" class="btn btn-danger align-right"><span class="fa fa-arrow-left"> Volver</span></a>
                                         <button type="submit" class="btn btn-success align-right"><span class="fa fa-save"> Guardar</span></button>                       
-                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
-                    
                 </form>
             </div>
             <!-- /.container-fluid -->
@@ -37,6 +37,4 @@
         <!-- End of Main Content -->
         {% include "includes/footer.html" %}
     </div>
-
-
 {% endblock content %}

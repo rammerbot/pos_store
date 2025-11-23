@@ -99,7 +99,7 @@ class ToggleSubCategoryStatusView(AdminRequiredMixin, View):
 class UpdateSubCategoryView(LoginRequiredMixin, AdminRequiredMixin, UpdateView):
     model = SubCategory
     form_class = SubCategoryForm
-    template_name = 'inv/category_form.html'
+    template_name = 'inv/sub_category_form.html'
     login_url = reverse_lazy('home:login')
     success_url = reverse_lazy('inv:sub_category_list')
 
@@ -211,6 +211,11 @@ class UpdateUnitMeasureView(LoginRequiredMixin, AdminRequiredMixin, UpdateView):
             f'✅ La categoría "{form.instance.name}" ha sido Actualizada exitosamente.'
         )
         return response
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['unit_measure'] = self.object  # aquí le damos el nombre que tu template espera
+        return context
     
 # Product Views
 class ProductListView(LoginRequiredMixin, ListView):

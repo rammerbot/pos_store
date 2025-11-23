@@ -11,14 +11,16 @@
             {% include "includes/header.html" %}
             <!-- Begin Page Content -->
             <div class="container-fluid">
-                <form method="post">
+                <form method="post" role="form" 
+                action="{% if subcategory %}{% url 'inv:update_sub_category' subcategory.id %}{% else %}{% url 'inv:create_sub_category' %}{% endif %}"
+                enctype="multipart/form-data">
                     {% csrf_token %}
                     <div class="col-xl-10 col-md-10 mb-10">
                         <div class="card border-left-success shadow h-100 py-2">
                             <div class="card-body">
                                 <div class="row no-gutters align-items-center">
                                     <div class="col mr-2">
-                                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Nueva Sub Categoria</div> 
+                                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">{% if subcategory %}Editar{% else %}Nueva{% endif %} Sub Categoria</div> 
                                         {{ form.as_p }}  
                                         <a href="{% url 'inv:sub_category_list' %}" class="btn btn-danger align-right"><span class="fa fa-arrow-left"> Volver</span></a>
                                         <button type="submit" class="btn btn-success align-right"><span class="fa fa-save"> Guardar</span></button>                       
