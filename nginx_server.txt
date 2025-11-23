@@ -1,0 +1,31 @@
+upstream pos_app {
+  server unix:/websapp/pos_env/run/gunicorn.sock fail_timeout=0;
+}
+ 
+server {
+ 
+    listen   80;
+    server_name rammerbot.com;
+ 
+    access_log /websapp/pos_env/logs/nginx-access.log;
+    error_log /webapp/pos_env/logs/nginx-error.log;
+ 
+    location /static/ {
+        alias   /websapp/pos_env/pos/staticfiles/;
+    }
+    
+    location /media/ {
+        alias   /websapp/pos_env/pos/media/;
+    }
+ 
+    location / {
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host $http_host;
+        proxy_redirect off;
+
+        if (!-f $request_filename) {
+            proxy_pass http://pos_app;
+            break;
+        }
+    }
+}

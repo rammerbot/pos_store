@@ -1,0 +1,102 @@
+<div class="modal fade" id="productModal" tabindex="-1" role="dialog" aria-labelledby="productModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="productModalLabel">🛒 Agregar Productos a la Compra</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-lg-6 col-md-12">
+                        <h6 class="text-primary">Selección de Producto</h6>
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover dt-responsive table-sm nowrap tbl-productos" style="width:100%">
+                                <thead>
+                                    <th>Codigo</th> 
+                                    <th class="all">Producto</th>
+                                    <th class="all">Acciones</th>
+                                </thead>
+                                <tbody>
+                                    {% for item in products %}
+                                    <tr>
+                                        <td>{{ item.code }}</td>
+                                        <td>{{ item.name}}</td>
+                                        <td>
+                                            <button type="button" class="btn btn-success btn-sm select-product-btn"
+                                            data-id="{{ item.id }}" 
+                                            data-name="{{ item.name }}"
+                                            data-code="{{ item.code }}"
+                                            > <i class="far fa-plus-square"></i> Seleccionar</button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 mt-4 mt-lg-0">
+                        <h6 class="text-primary">Configuración y Total</h6>
+                        <div class="form-group row">
+                            <label for="modal_id_producto" class="col-sm-4 col-form-label">Producto Seleccionado:</label>
+                            <div class="col-sm-8">
+                                <input type="text" readonly class="form-control-plaintext font-weight-bold" id="modal_descripcion_producto" value="Ninguno" required>
+                                <input type="hidden" id="modal_id_producto" value="">
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label for="modal_cantidad_detalle" class="col-sm-4 col-form-label">Cantidad:</label>
+                            <div class="col-sm-8">
+                                <input type="number" class="form-control detail-field" id="modal_cantidad_detalle" value="1" min="1" required>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="modal_precio_detalle" class="col-sm-4 col-form-label">Precio Unitario:</label>
+                            <div class="col-sm-8">
+                                <input type="number" class="form-control detail-field" id="modal_precio_detalle" value="0.00" min="0" step="0.01" required>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="modal_descuento" class="col-sm-4 col-form-label">Descuento (%):</label>
+                            <div class="col-sm-8">
+                                <input type="number" class="form-control detail-field" id="modal_descuento" value="0" min="0" max="100" step="0.01">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="modal_impuesto_detalle" class="col-sm-4 col-form-label">Aplica IVA:</label>
+                            <div class="col-sm-8 pt-2">
+                                <input type="checkbox" class="form-check-input detail-field" id="modal_impuesto_detalle" checked>
+                            </div>
+                        </div>
+                        
+                        <div class="dropdown-divider"></div>
+                        <div class="form-group row">
+                            <label class="col-sm-4 col-form-label font-weight-bold text-info">Sub Total Neto:</label>
+                            <div class="col-sm-8">
+                                <input type="text" readonly class="form-control-plaintext font-weight-bold text-info" id="modal_sub_total_detalle" value="0.00">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-sm-4 col-form-label font-weight-bold text-success">Total a Agregar:</label>
+                            <div class="col-sm-8">
+                                <input type="text" readonly class="form-control-plaintext font-weight-bold text-success" id="modal_total_detalle" value="0.00">
+                            </div>
+                        </div>
+                        
+                        <div class="dropdown-divider"></div>
+                        <h6 class="text-secondary">Items Pendientes: <span id="pending-count">0</span></h6>
+                        <ul class="list-group" id="pending-items-list">
+                            </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-warning" id="btnAddToList" disabled><i class="fas fa-cart-plus"></i> Agregar a la Lista</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-success" id="btnSendAllItems" disabled><i class="fas fa-paper-plane"></i> Enviar Todos (<span id="send-count">0</span>)</button>
+            </div>
+        </div>
+    </div>
+</div>

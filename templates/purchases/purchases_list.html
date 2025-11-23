@@ -3,123 +3,155 @@
 {% block title %}Compras{% endblock title %}
 
 {% block content %}
+
+<style>
+    /* Asegura que el contenido de las celdas de fecha no salte de línea */
+    .min-width-date {
+        white-space: nowrap; 
+    }
+    /* Puedes intentar forzar un ancho mínimo para estas dos columnas (opcional, DataTables a veces lo ignora) */
+    #dataTable th.min-width-date {
+        min-width: 90px; /* Ajusta este valor si es necesario */
+    }
+</style>
+
 {% include "includes/side_bar.html" %}
-    <!-- Content Wrapper -->
-<div id="content-wrapper" class="d-flex flex-column">
-  <!-- Main Content -->
-  <div id="content">
-    {% include "includes/header.html" %}
-    <!-- Begin Page Content -->
-    <div class="container-fluid">
-      <!-- Dropdown Card  -->
-      <div class="card shadow mb-4">
-        <!-- Card Header - Dropdown -->
-        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-          <h6 class="m-0 font-weight-bold text-primary">Listado de Compras</h6>
-          <div class="dropdown no-arrow">
-            <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
-            </a>
-            <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
-              <div class="dropdown-header">Acciones:</div>
-              <a class="dropdown-item" href="{% url 'purchases:purchase_create' %}"><i class="far fa-calendar-plus"></i> Nueva</a>
-              <a class="dropdown-item" href="{% url "purchases:purchase_report_filter"  %}" target="reportes"><i class="fas fa-print"></i>Reportes PDF</a>
-              <div class="dropdown-divider"></div>
+    <div id="content-wrapper" class="d-flex flex-column">
+        <div id="content">
+            {% include "includes/header.html" %}
+            
+            <div class="container-fluid">
+                
+                <div class="card shadow mb-4">
+                    
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                        <h6 class="m-0 font-weight-bold text-primary">Listado de Compras</h6>
+                        
+                        <div class="d-flex">
+                            <a class="btn btn-info btn-sm btn-icon-split mr-2" href="{% url "purchases:purchase_report_filter" %}" target="_blank">
+                                <span class="icon text-white-50">
+                                    <i class="fas fa-print"></i>
+                                </span>
+                                <span class="text">Reportes PDF</span>
+                            </a>
+                            <a class="btn btn-primary btn-sm btn-icon-split" href="{% url 'purchases:purchase_create' %}">
+                                <span class="icon text-white-50">
+                                    <i class="far fa-calendar-plus"></i>
+                                </span>
+                                <span class="text">Nueva Compra</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="card-body">
+                        {% if not purchases %}
+                            <div class="alert alert-info">No hay compras cargadas</div>
+                        {% else %}
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th>Id</th>        
+                                            <th class="min-width-date">Fecha</th> 
+                                            <th>Observación</th>
+                                            <th>No. Factura</th>
+                                            <th class="min-width-date">F. Factura</th> 
+                                            <th>Sub Total</th>
+                                            <th>Descuento</th>
+                                            <th>Iva %</th>
+                                            <th>Total</th>
+                                            <th class="text-center">Estado</th>
+                                            <th class="text-center">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in purchases %} 
+                                            <tr>
+                                                <td>{{ item.id }}</td>
+                                                <td class="min-width-date">{{ item.order_date|date:"Y-m-d" }}</td> 
+                                                <td>{{item.observtions|default:"-"}}</td>
+                                                <td>{{ item.order_number }}</td>
+                                                <td class="min-width-date">{{ item.buy_date|date:"Y-m-d" }}</td> 
+                                                <td>$ {{ item.subtotal|floatformat:2 }}</td>
+                                                <td>$ {{ item.discount|floatformat:2 }}</td>
+                                                <td>{{ item.tax|floatformat:2 }} %</td>
+                                                <td>$ **{{ item.total_amount|floatformat:2 }}**</td>
+                                                
+                                                <td class="text-center">
+                                                    {% if item.status %}
+                                                        <span class="badge badge-success">Activo</span>
+                                                    {% else %}
+                                                        <span class="badge badge-danger">Anulado</span>
+                                                    {% endif %}
+                                                </td>
+                                                
+                                                <td class="text-center">
+                                                    <a class="btn btn-warning btn-circle btn-sm" href="{% url "purchases:purchase_update" item.id %}" title="Editar">
+                                                        <i class="far fa-edit"></i>
+                                                    </a>
+                                                    <a class="btn btn-success btn-circle btn-sm" href="{% url "purchases:pirnt_purchase_report" item.id %}" target="_blank" title="Imprimir Reporte">
+                                                        <i class="fas fa-print"></i>
+                                                    </a>
+                                                </td> 
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
-        <!-- Card Body -->
-        <div class="card-body">
-          {% if not purchases %}
-          <div class="alert alert-info">No hay compras</div>
-            {% endif %}
-            <table class="table table-striped">
-              <thead>
-                <tr>
-                  <th>Id</th>        
-                  <th>Fecha</th>
-                  <th>Observación</th>
-                  <th>No. Factura</th>
-                  <th>F. Factura</th>
-                  <th>Sub Total</th>
-                  <th>Descuento</th>
-                  <th>Iva %</th>
-                  <th>Total</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-               <tbody>
-                  {% for item in purchases %} 
-                    <tr>
-                      <td>{{ item.id }}</td>
-                      <td>{{ item.order_date }}</td>
-                      <td>{{item.observtions}}</td>
-                      <td>{{ item.order_number }}</td>
-                      <td>{{ item.buy_date }}</td>
-                      <td>{{ item.subtotal }}</td>
-                      <td>{{ item.discount }}</td>
-                      <td>{{ item.tax }}</td>
-                      <td>{{ item.total_amount }}</td>
-                      <td>{{item.status|yesno:"Activo,Inactivo"}}</td>
-                       <td>
-                        <a class="btn btn-warning btn-circle" href="{% url "purchases:purchase_update" item.id %}"><i class="far fa-edit"></i></a>
-                        <a class="btn btn-success btn-circle" href="{% url "purchases:pirnt_purchase_report" item.id %}" target="reportes"><i class="fas fa-print"></i></a>
-                      </td> 
-                    </tr>
-                  {% endfor %}
-                </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+            </div>
+        {% include "includes/footer.html" %}
     </div>
-    {% include "includes/footer.html" %}
-  </div>
-</div>
 {% endblock content %}
+
 {% block JavaScript %}
 <script>
-  $(document).ready(function() {
-    $('.table').DataTable( {
-  dom: '<"top"fi><"toolbar">rt<"bottom"lpB><"clear">',
-  "paging":   true,
-  "ordering": true,
-  "info":     true,
-    "language": {
-        "decimal":        ".",
-        "emptyTable":     "No hay datos en la tabla",
-        "info":           "Mostrando del _START_ al _END_ de _TOTAL_ registros",
-        "infoEmpty":      "Mostrando 0 a 0 de 0 registros",
-        "infoFiltered":   "(filtrados a partir de _MAX_ registros)",
-        "infoPostFix":    "",
-        "thousands":      ",",
-        "lengthMenu":     "Mostrando _MENU_ registros",
-        "loadingRecords": "Cargando...",
-        "processing":     "Procesando...",
-        "search":         "Busqueda:",
-        "zeroRecords":    "No se encontraron registros coincidentes",
-        "paginate": {
-        "first":      "Primero",
-        "last":       "Ultimo",
-        "next":       "Siguiente",
-        "previous":   "Anterior"
-        },
-        "aria": {
-        "sortAscending":  ": activa la ordenación ascendente",
-        "sortDescending": ": activate la ordenanción descendente"
-          }
-      }      
-    }
- 
-    );
-  });
+    $(document).ready(function() {
+        // Inicialización de DataTables corregida para funcionar y ser responsiva
+        $('#dataTable').DataTable( {
+            "destroy": true, // Importante para evitar errores al recargar
+            "paging":   true,
+            "ordering": true,
+            "info":     true,
+            "responsive": true, // Añadir responsive para mejor visualización en móviles
+            "order": [[ 0, "desc" ]],
+            "language": {
+                "decimal":        ".",
+                "emptyTable":     "No hay datos en la tabla",
+                "info":           "Mostrando del _START_ al _END_ de _TOTAL_ registros",
+                "infoEmpty":      "Mostrando 0 a 0 de 0 registros",
+                "infoFiltered":   "(filtrados a partir de _MAX_ registros)",
+                "infoPostFix":    "",
+                "thousands":      ",",
+                "lengthMenu":     "Mostrando _MENU_ registros",
+                "loadingRecords": "Cargando...",
+                "processing":     "Procesando...",
+                "search":         "Búsqueda:",
+                "zeroRecords":    "No se encontraron registros coincidentes",
+                "paginate": {
+                    "first":      "Primero",
+                    "last":       "Último",
+                    "next":       "Siguiente",
+                    "previous":   "Anterior"
+                },
+                "aria": {
+                    "sortAscending":  ": activa la ordenación ascendente",
+                    "sortDescending": ": activa la ordenación descendente"
+                }
+            }
+        });
+    });
 </script>
 
 <script>
-    {% if messages %}  
+    {% if messages %}  
         {% for message in messages %}
-            message("{{ message }}", 'green')
+            if(typeof message === "function") {
+                message("{{ message }}", 'green');
+            }
         {% endfor %}
     {% endif %}
 </script>

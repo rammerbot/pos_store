@@ -249,10 +249,10 @@ def print_sale_invoice(request, sale_id):
 
     return response
 
-def print_invoice(request, id):
+def print_invoice(request, sale_id):
     template_name = 'sales/print_invoice.html'
 
-    header = Sale.objects.get(id=id)
+    header = Sale.objects.get(id=sale_id)
     detail = SaleDetail.objects.filter(sale=header)
 
     context = {

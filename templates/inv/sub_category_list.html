@@ -1,77 +1,88 @@
 {% extends "layout.html" %}
 {% load static %}
-{% block title %}Categorias{% endblock title %}
+{% block title %}Sub Categorías{% endblock title %}
 
 {% block content %}
 {% include "includes/side_bar.html" %}
-    <!-- Content Wrapper -->
+
     <div id="content-wrapper" class="d-flex flex-column">
-        <!-- Main Content -->
+
         <div id="content">
+
             {% include "includes/header.html" %}
-            <!-- Begin Page Content -->
+
             <div class="container-fluid">
                 
-                <!-- Dropdown Card Example -->
                 <div class="card shadow mb-4">
-                    <!-- Card Header - Dropdown -->
                     <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                        <h6 class="m-0 font-weight-bold text-primary">Lista de Sub Categorias</h6>
-                        <div class="dropdown no-arrow">
-                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                        <h6 class="m-0 font-weight-bold text-primary">Lista de Sub Categorías</h6>
+                        <a class="btn btn-primary btn-sm btn-icon-split" onclick="return open_modal('{% url 'inv:create_sub_category' %}')" href="#">
+                            <span class="icon text-white-50">
+                                <i class="fas fa-plus"></i>
+                            </span>
+                            <span class="text">Nueva Sub Categoría</span>
                         </a>
-                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
-                            <div class="dropdown-header">Agregar Sub Categoria:</div>
-                            <a class="dropdown-item" href="{% url 'inv:create_sub_category' %}"><i class="fas fa-plus"></i> Nueva Sub Categoría</a>
-                            <div class="dropdown-divider"></div>
-                        </div>
-                        </div>
                     </div>
-                    <!-- Card Body -->
+
                     <div class="card-body">
                         {% if not subcategories %}
                             <div class="alert alert-info">No hay Sub categorías cargadas</div>
                         {% else %}
-                            <table class="table table-striped table-hover">
-                                <thead>
-                                    <tr>
-                                        <th scope="col">Categoria</th>
-                                        <th scope="col">ID</th>
-                                        <th scope="col">Nombre</th>
-                                        <th scope="col">Descripción</th>                                       
-                                        <th scope="col">Estado</th>
-                                        <th scope="col">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for subcategory in subcategories %}
-                                    <tr>
-                                        <td>{{ subcategory.category.name }}</td>
-                                        <td>{{ subcategory.id }}</td>
-                                        <td>{{ subcategory.name }}</td>
-                                        <td>{{ subcategory.description|default:"-" }}</td>
-                                        <td>{% if subcategory.status %}Activa{% else %}Inactiva{% endif %}</td>
-                                        <td>
-                                            <a class="btn btn-warning toggle-status" href="{% url 'inv:update_sub_category' subcategory.id %}" ><i class="fas fa-edit"></i>  Editar</a>
-                                            <button class="btn btn-{% if subcategory.status %}danger{% else %}success{% endif %} toggle-status" 
-                                            data-sub-category-id="{{ subcategory.id}}">
-                                            {% if subcategory.status %}<i class="fas fa-ban"></i>  Desactivar{% else %}<i class="fas fa-check"></i>  Activar{% endif %}
-                                        </button></td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th>Categoría Padre</th>
+                                            <th>ID</th>
+                                            <th>Nombre</th>
+                                            <th>Descripción</th>                                       
+                                            <th class="text-center">Estado</th>
+                                            <th class="text-center">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for subcategory in subcategories %}
+                                        <tr id="row-{{ subcategory.id }}">
+                                            <td>{{ subcategory.category.name }}</td>
+                                            <td>{{ subcategory.id }}</td>
+                                            <td>{{ subcategory.name }}</td>
+                                            <td>{{ subcategory.description|default:"-" }}</td>
+                                            
+                                            <td class="text-center status-cell">
+                                                {% if subcategory.status %}
+                                                    <span class="badge badge-success">Activa</span>
+                                                {% else %}
+                                                    <span class="badge badge-danger">Inactiva</span>
+                                                {% endif %}
+                                            </td>
+
+                                            <td class="text-center">
+                                                <a onclick="return open_modal('{% url 'inv:update_sub_category' subcategory.id %}')" href="#" class="btn btn-warning btn-circle btn-sm" title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                
+                                                <button class="btn btn-circle btn-sm toggle-status {% if subcategory.status %}btn-danger{% else %}btn-success{% endif %}" 
+                                                        data-sub-category-id="{{ subcategory.id}}"
+                                                        title="{% if subcategory.status %}Desactivar{% else %}Activar{% endif %}">
+                                                    {% if subcategory.status %}
+                                                        <i class="fas fa-ban"></i>
+                                                    {% else %}
+                                                        <i class="fas fa-check"></i>
+                                                    {% endif %}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
                         {% endif %}
                     </div>
                 </div>
             </div>
-            <!-- /.container-fluid -->
-        </div>
-        <!-- End of Main Content -->
+            </div>
         {% include "includes/footer.html" %}
 
-        <!-- Modal de Confirmación -->
         <div class="modal fade" id="confirmToggleModal" tabindex="-1" aria-labelledby="confirmToggleModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -82,13 +93,12 @@
                         </button>
                     </div>
                     <div class="modal-body p-0">
-                        <!-- Contenedor principal con borde izquierdo -->
                         <div class="border-left-0" id="modalBorderContainer">
                             <div class="p-3">
                                 <p class="mb-0">
                                     <span id="actionIcon"></span>
-                                    ¿Estás seguro de que deseas <span id="actionText"></span> la categoría 
-                                    <span id="categoryNameText" class="text-primary fw-bold"></span>?
+                                    ¿Estás seguro de que deseas <span id="actionText" class="font-weight-bold"></span> la Sub Categoría 
+                                    <span id="categoryNameText" class="text-primary font-weight-bold"></span>?
                                 </p>
                             </div>
                         </div>
@@ -102,72 +112,78 @@
         </div>
     </div>
 
+{% block modal %}
+<div class="modal fade" id="popup"></div>
+{% endblock modal %}
 
 {% endblock content %}
+
 {% block JavaScript %}
 <script>
+// Funciones Modal para Edición/Creación
+function open_modal(url) {
+    $('#popup').load(url, function() {
+        $(this).modal({ backdrop: 'static', keyboard: false });
+        $(this).modal('show');
+    });
+    return false;
+}
+function close_modal() { $('#popup').modal('hide'); return false; }
+
 document.addEventListener('DOMContentLoaded', function() {
     const buttons = document.querySelectorAll('.toggle-status');
-    const confirmModal = new bootstrap.Modal(document.getElementById('confirmToggleModal'));
+    // const confirmModal = new bootstrap.Modal(document.getElementById('confirmToggleModal')); // Usamos jQuery para modals antiguos si aún se usa SB Admin 2
     const modalBorderContainer = document.getElementById('modalBorderContainer');
     const actionIcon = document.getElementById('actionIcon');
     
-    let currentCategoryId = null;
+    let currentId = null;
     let currentButton = null;
     let currentRow = null;
-    let currentCategoryName = null;
     
     buttons.forEach(button => {
         button.addEventListener('click', function() {
-            currentCategoryId = this.getAttribute('data-sub-category-id');
+            currentId = this.getAttribute('data-sub-category-id');
             currentButton = this;
             currentRow = this.closest('tr');
             
-            // Obtener el nombre de la subcategoría desde la tabla
-            const nameCell = currentRow.querySelector('td:nth-child(2)');
-            currentCategoryName = nameCell.textContent.trim();
+            // Obtener el nombre de la subcategoría (es la columna 3, índice 2 si contamos desde 0)
+            const nameCell = currentRow.querySelector('td:nth-child(3)');
+            const currentName = nameCell.textContent.trim();
             
-            const currentAction = this.textContent.trim();
-            const isActivating = currentAction === 'Activar';
+            const isActive = this.classList.contains('btn-danger'); // Si es rojo, está Activa y la acción es Desactivar
             
-            // Configurar el modal con el nombre de la categoría
-            document.getElementById('actionText').textContent = isActivating ? 'activar' : 'desactivar';
-            document.getElementById('categoryNameText').textContent = currentCategoryName;
+            // Configurar el modal con el nombre
+            document.getElementById('actionText').textContent = isActive ? 'desactivar' : 'activar';
+            document.getElementById('categoryNameText').textContent = currentName;
             
             // Configurar estilos según la acción
-            if (isActivating) {
-                // Estilos para activar ✅
+            if (!isActive) { // Si la acción es Activar
                 modalBorderContainer.classList.remove('border-left-warning');
                 modalBorderContainer.classList.add('border-left-success');
-                modalBorderContainer.style.borderLeftWidth = '4px';
+                modalBorderContainer.style.borderLeft = '4px solid #1cc88a';
                 actionIcon.innerHTML = '✅ ';
-            } else {
-                // Estilos para desactivar 🚫
+            } else { // Si la acción es Desactivar
                 modalBorderContainer.classList.remove('border-left-success');
                 modalBorderContainer.classList.add('border-left-warning');
-                modalBorderContainer.style.borderLeftWidth = '4px';
+                modalBorderContainer.style.borderLeft = '4px solid #f6c23e';
                 actionIcon.innerHTML = '🚫 ';
             }
             
-            confirmModal.show();
+            $('#confirmToggleModal').modal('show');
         });
     });
     
     // Manejar la confirmación
     document.getElementById('confirmToggleBtn').addEventListener('click', function() {
-        confirmModal.hide();
+        $('#confirmToggleModal').modal('hide');
         
-        // Restablecer estilos del modal
-        modalBorderContainer.classList.remove('border-left-success', 'border-left-warning');
-        modalBorderContainer.style.borderLeftWidth = '0';
-        actionIcon.innerHTML = '';
-        
-        // Mostrar indicador de carga
+        // Guardamos el contenido original del botón
+        const originalContent = currentButton.innerHTML;
         currentButton.disabled = true;
-        currentButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Procesando...';
-        
+        currentButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
         const formData = new FormData();
-        formData.append('sub_category_id', currentCategoryId);
+        formData.append('sub_category_id', currentId);
         
         fetch('{% url "inv:toggle_sub_category_status" %}', {
             method: 'POST',
@@ -179,32 +195,34 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Actualizar el estado en la tabla
-                const statusCell = currentRow.querySelector('td:nth-child(4)');
-                statusCell.textContent = data.new_status ? 'Activa' : 'Inactiva';
+                // Actualizar el estado en la columna del badge
+                const statusCell = currentRow.querySelector('.status-cell');
                 
-                // Actualizar el botón
+                // Actualizar el botón y el badge
                 if (data.new_status) {
-                    currentButton.classList.remove('btn-success');
-                    currentButton.classList.add('btn-danger');
-                    currentButton.innerHTML = '{% autoescape off %}<i class="fas fa-ban"></i> Desactivar{% endautoescape %}';
-                    // Mostrar mensaje de éxito para activación con nombre
-                    message(`✅ La SubCategoría "<strong>${data.sub_category_name}</strong>" ha sido activada exitosamente`, 'green');
+                    // Se activó
+                    statusCell.innerHTML = '<span class="badge badge-success">Activa</span>';
+                    currentButton.classList.replace('btn-success', 'btn-danger');
+                    currentButton.innerHTML = '<i class="fas fa-ban"></i>';
+                    currentButton.title = "Desactivar";
+                    if(typeof message === "function") message(`✅ La Sub Categoría "<strong>${data.sub_category_name}</strong>" ha sido activada exitosamente`, 'green');
                 } else {
-                    currentButton.classList.remove('btn-danger');
-                    currentButton.classList.add('btn-success');
-                    currentButton.innerHTML = '{% autoescape off %}<i class="fas fa-check"></i> Activar{% endautoescape %}';
-                    // Mostrar mensaje de éxito para desactivación con nombre
-                    message(`🚫 La SubCategoría "<strong>${data.sub_category_name}</strong>" ha sido desactivada exitosamente`, 'orange');
+                    // Se desactivó
+                    statusCell.innerHTML = '<span class="badge badge-danger">Inactiva</span>';
+                    currentButton.classList.replace('btn-danger', 'btn-success');
+                    currentButton.innerHTML = '<i class="fas fa-check"></i>';
+                    currentButton.title = "Activar";
+                    if(typeof message === "function") message(`🚫 La Sub Categoría "<strong>${data.sub_category_name}</strong>" ha sido desactivada exitosamente`, 'orange');
                 }
             } else {
-                // Mostrar mensaje de error
-                message('❌ Error: ' + (data.error || 'No se pudo cambiar el estado'), 'red');
+                if(typeof message === "function") message('❌ Error: ' + (data.error || 'No se pudo cambiar el estado'), 'red');
+                currentButton.innerHTML = originalContent;
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            message('❌ Ocurrió un error al cambiar el estado', 'red');
+            if(typeof message === "function") message('❌ Ocurrió un error al cambiar el estado', 'red');
+            currentButton.innerHTML = originalContent;
         })
         .finally(() => {
             currentButton.disabled = false;
@@ -219,54 +237,51 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
 <script>
-  // Call the dataTables jQuery plugin
+  // Call the dataTables jQuery plugin (CON CORRECCIÓN destroy: true)
   $(document).ready(function() {
-    $('.table').DataTable( {
-  dom: '<"top"fi><"toolbar">rt<"bottom"lpB><"clear">',
-  "paging":   true,
-  "ordering": true,
-  "info":     true,
-    "language": {
-        "decimal":        ".",
-        "emptyTable":     "No hay datos en la tabla",
-        "info":           "Mostrando del _START_ al _END_ de _TOTAL_ registros",
-        "infoEmpty":      "Mostrando 0 a 0 de 0 registros",
-        "infoFiltered":   "(filtrados a partir de _MAX_ registros)",
-        "infoPostFix":    "",
-        "thousands":      ",",
-        "lengthMenu":     "Mostrando _MENU_ registros",
-        "loadingRecords": "Cargando...",
-        "processing":     "Procesando...",
-        "search":         "Busqueda:",
-        "zeroRecords":    "No se encontraron registros coincidentes",
-        "paginate": {
-        "first":      "Primero",
-        "last":       "Ultimo",
-        "next":       "Siguiente",
-        "previous":   "Anterior"
+    $('#dataTable').DataTable( {
+        "destroy": true, // ¡Corrección crítica!
+        "paging":   true,
+        "ordering": true,
+        "info":     true,
+        "language": {
+            "decimal":        ".",
+            "emptyTable":     "No hay datos en la tabla",
+            "info":           "Mostrando del _START_ al _END_ de _TOTAL_ registros",
+            "infoEmpty":      "Mostrando 0 a 0 de 0 registros",
+            "infoFiltered":   "(filtrados a partir de _MAX_ registros)",
+            "infoPostFix":    "",
+            "thousands":      ",",
+            "lengthMenu":     "Mostrando _MENU_ registros",
+            "loadingRecords": "Cargando...",
+            "processing":     "Procesando...",
+            "search":         "Búsqueda:",
+            "zeroRecords":    "No se encontraron registros coincidentes",
+            "paginate": {
+            "first":      "Primero",
+            "last":       "Último",
+            "next":       "Siguiente",
+            "previous":   "Anterior"
+            },
+            "aria": {
+            "sortAscending":  ": activa la ordenación ascendente",
+            "sortDescending": ": activa la ordenación descendente"
+            }
         },
-        "aria": {
-        "sortAscending":  ": activa la ordenación ascendente",
-        "sortDescending": ": activate la ordenanción descendente"
-          }
-      }      
-    }
- 
-    );
+        "order": [[ 1, "desc" ]] // Ordena por ID
+    });
   });
 </script>
 
 <script>
     {% if messages %}
-        
-    {% for message in messages %}
-    
-        message("{{ message }}", 'green')
-        
-    
-    {% endfor %}
-
-{% endif %}
+        {% for message in messages %}
+            if(typeof message === "function") {
+                 message("{{ message }}", 'green');
+            }
+        {% endfor %}
+    {% endif %}
 </script>
 {% endblock JavaScript %}

@@ -20,4 +20,5 @@ urlpatterns = [
     path('purchases/report/pdf/',reports.purshase_repotr_to_pdf, name='purchase_report_pdf'),
     path('purchases/report/filter/', reports.purchase_report_filter, name='purchase_report_filter'),
     path('purchases/report/print/<int:purchase_id>', reports.print_purchase_report, name='pirnt_purchase_report'),
+    path('purchase/add_multiple_products/<int:purchase_id>/', views.add_multiple_products_view, name='purchase_add_multiple_products'),
 ]

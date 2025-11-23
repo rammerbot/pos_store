@@ -3,8 +3,6 @@ from django.urls import path
 from . import views
 from . import reports
 
-
-
 app_name = "sales"
 urlpatterns = [
     # customer URLs
@@ -18,7 +16,10 @@ urlpatterns = [
     path('sales/create/', views.sale_order_view, name='sale_create'),
     path('sales/update/<int:sale_id>/', views.sale_order_view, name='sale_update'),
     path('sales/delete/<int:sale_id>/<int:pk>/', views.SaleDeleteView.as_view(), name='sale_delete'),
-    path('sales/print_invoice/<int:id>', reports.print_invoice, name='print_invoice'),
+    
+    # CORREGIDO: Unificar las URLs de impresión y usar sale_id consistentemente
+    path('sales/print_invoice/<int:sale_id>/', reports.print_invoice, name='print_invoice'),
+    
     path('sales/anular/<int:sale_id>/<int:pk>/', views.SaleAnularView.as_view(), name='sale_anular'),
     path('sales/get_customers/', views.get_customers_json, name='get_customers_json'),
     
@@ -31,10 +32,15 @@ urlpatterns = [
     path('sales/report/pdf/', reports.sales_report_to_pdf, name='sales_report_pdf'),
     path('sales/report/filter/', reports.sales_report_filter, name='sales_report_filter'),
     path('reports/sales/daily/', reports.daily_sales_report_to_pdf, name='daily_sales_report'),
-    path('sales/print_invoice/<int:sale_id>/', reports.print_sale_invoice, name='print_sale_invoice'),
+    
+    # ELIMINAR: Esta línea está duplicada
+    # path('sales/print_invoice/<int:sale_id>/', reports.print_sale_invoice, name='print_sale_invoice'),
+    
     path('reports/sales/daily/select-date/', views.DailyReportSelectDateView.as_view(), name='daily_report_select_date'),
 
     # Presupuestos
     path('budget/create/', views.BudgetCreateView.as_view(), name='create_budget'),
     path('budget/generate/pdf/', reports.generate_budget_pdf, name='generate_budget_pdf'),
+
+    path('sales/add_multiple_products/<int:sale_id>/', views.add_multiple_sale_products_view, name='sale_add_multiple_products'),
 ]

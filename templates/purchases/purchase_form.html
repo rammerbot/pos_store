@@ -5,284 +5,636 @@
 
 {% block content %}
 
-<!-- Incluir SweetAlert2 CSS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
-    {% include "includes/side_bar.html" %}
-    <div id="content-wrapper" class="d-flex flex-column">
-        <!-- Main Content -->
-        <div id="content">
-            {% include "includes/header.html" %}
-            <!-- Begin Page Content -->
-            <div class="container-fluid">
-                <form method="post" id="frmCompras">
-                    {% csrf_token %}
-                    <div class="col-xl-12 col-md-12 mb-12">
-                        {% if header %}
-                        <div class="card border-left-warning shadow h-100 py-2">
-                        {% else %}
-                        <div class="card border-left-success shadow h-100 py-2">
-                        {% endif %}
-                            <div class="card-body">
-                                    <div class="row no-gutters align-items-center">
-                                        <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                                {% if header %} Editar {% else %} Nueva {% endif %} Compra
+{% include "includes/side_bar.html" %}
+<div id="content-wrapper" class="d-flex flex-column">
+    <div id="content">
+        {% include "includes/header.html" %}
+        <div class="container-fluid">
+            <form method="post" id="frmCompras">
+                {% csrf_token %}
+                <div class="col-xl-12 col-md-12 mb-12">
+                    {% if header %}
+                    <div class="card border-left-warning shadow h-100 py-2">
+                    {% else %}
+                    <div class="card border-left-success shadow h-100 py-2">
+                    {% endif %}
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                        {% if header %} Editar {% else %} Nueva {% endif %} Compra
+                                    </div>
+                                    <div class="dropdown-divider"></div>
+                                    
+                                    <!-- SECCIÓN DE ENCABEZADO MEJORADA -->
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="id_supplier" class="form-label">Proveedor:</label>
+                                                {{ purchase_form.supplier }}
                                             </div>
-                                            <div class="dropdown-divider"></div>
-                                            <div class="row">
-                                                <!-- Inicio Izquierda -->
-                                                <div class="col-6">
-                                                    <!-- Inicio Encabezado -->
-                                                    <div class="form-group row">
-                                                        <label for="supplier" class="col-sm-2 col-form-label">Proveedor:</label>
-                                                        <div class="col-sm-10">
-                                                        {{ purchase_form.supplier }}
-                                                        </div>
-                                                    </div>
-                                                    <div class="row">
-                                                        <div class="col-6">
-                                                            <div class="form-group">
-                                                                <label for="id_buy_date">Fecha Compra:</label>
-                                                                {{ purchase_form.buy_date}}
-                                                            </div>
-                                                            <div class="form-group">
-                                                                <label for="description">Descripción:</label>
-                                                                {{ purchase_form.observations}}
-                                                            </div>
-                                                        </div>
-                                                        <div class="col-6">
-                                                            <div class="form-group">
-                                                                <label for="order_number">No. Factura:</label>
-                                                                {{ purchase_form.order_number}}
-                                                            </div>
-                                                            <div class="form-group">
-                                                                <label for="id_order_date">Fecha Factura:</label>
-                                                                {{ purchase_form.order_date}}
-                                                            </div>
-                                                            <div class="row">
-                                                                <div class="col">
-                                                                    <label for="subtotal">Sub Total:</label>
-                                                                </div>
-                                                                <div class="col">
-                                                                    {{  purchase_form.subtotal }}
-                                                                </div>
-                                                            </div>
-                                                            <div class="row">
-                                                                <div class="col">
-                                                                    <label for="discount">Descuento:</label>
-                                                                </div>
-                                                                <div class="col">
-                                                                    {{  purchase_form.discount }}
-                                                                </div>
-                                                            </div>
-                                                            <!-- Nuevo campo para mostrar IVA del encabezado -->
-                                                            <div class="row">
-                                                                <div class="col">
-                                                                    <label for="tax">IVA:</label>
-                                                                </div>
-                                                                <div class="col">
-                                                                    {{  purchase_form.tax }}
-                                                                </div>
-                                                            </div>
-                                                            <div class="row">
-                                                                <div class="col">
-                                                                    <label for="total_amount">Total:</label>
-                                                                </div>
-                                                                <div class="col">
-                                                                    {{  purchase_form.total_amount }}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <!-- Fin Encabezado -->
-                                                </div>
-                                                <!-- Fin Izquierda -->
-                                                <!-- Inicio Derecha -->
-                                                <div class="col-6">
-                                                    <div class="row">
-                                                        <div class="col">
-                                                            <table class="table table-striped table-hover dt-responsive table-sm nowrap tbl-productos" style="width:100%">
-                                                                <thead>
-                                                                    <th>Codigo</th>        
-                                                                    <th class="all">Producto</th>
-                                                                    <th class="all">Acciones</th>
-                                                                </thead>
-                                                                <tbody>
-                                                                    {% for item in products %}
-                                                                    <tr>
-                                                                    <td>{{ item.code }}</td>
-                                                                    <td>{{ item.name}}</td>
-                                                                    <td>
-                                                                        <button type="button" class="btn btn-success "
-                                                                        onclick="selectProducto({{item.id}},'{{item.name}}', {{item.code}})" > <i class="far fa-plus-square"></i></button>
-                                                                    </td>
-                                                                    </tr>
-                                                                    {% endfor %}
-                                                                </tbody>
-                                                            </table>
-                                                        </div>
-                                                    </div>
-                                                    <div class="form-group row">
-                                                        <label for="id_id_producto" class="col-sm-3 col-form-label">Producto</label>
-                                                        <div class="col-sm-2">
-                                                            <input type="text" readonly class="form-control-plaintext" name="id_id_producto" id="id_id_producto" value="" required>
-                                                        </div>
-                                                        <div class="col-sm-7">
-                                                            <input type="text" readonly class="form-control-plaintext" id="id_descripcion_producto" value="" required>
-                                                        </div>
-                                                    </div>
-                                                    <div class="form-group row">
-                                                        <label for="id_cantidad_detalle" class="col-sm-2 col-form-label">Cant.:</label>
-                                                        <div class="col-sm-2">
-                                                            <input type="number" class="form-control" name="id_cantidad_detalle" id="id_cantidad_detalle" value="00" required>
-                                                        </div>
-                                                        <label for="id_precio_detalle" class="col-sm-2 col-form-label">Precio:</label>
-                                                        <div class="col-sm-2">
-                                                            <input type="number" class="form-control-plaintext" name="id_precio_detalle" id="id_precio_detalle" value="00" required>
-                                                        </div>
-                                                        <label for="id_descuento_detalle" class="col-sm-2 col-form-label">Desc. %:</label>
-                                                        <div class="col-sm-2">
-                                                            <input type="text" class="form-control" name="id_descuento" id="id_descuento" value="00"> 
-                                                            <input type="text" class="form-control" name="id_descuento_detalle" id="id_descuento_detalle" hidden value="00">
-                                                        </div>
-                                                        <label for="id_impuesto_detalle" class="col-sm-2 col-form-label">IVA%:</label>
-                                                        <div class="col-sm-2">
-                                                            <input type="checkbox" class="form-control" name="id_impuesto_detalle" id="id_impuesto_detalle" >
-                                                        </div>
-                                                        <div class="col-sm-2">
-                                                            <input type="number" readonly class="form-control-plaintext" name="id_impuesto" id="id_impuesto" > 
-                                                        </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label for="id_order_number" class="form-label">No. Factura:</label>
+                                                {{ purchase_form.order_number }}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <button type="button" class="btn btn-primary mt-4" data-bs-toggle="modal" data-bs-target="#productModal">
+                                                <i class="fas fa-plus-circle"></i> Agregar Productos
+                                            </button>
+                                        </div>
+                                    </div>
 
-                                                    </div>
-                                                    <div class="form-group row">
-                                                        <label for="subtotal" class="col-sm-2 col-form-label">S. Total:</label>
-                                                        <div class="col-sm-4">
-                                                            <input type="text" readonly class="form-control-plaintext" name="id_sub_total_detalle" id="id_sub_total_detalle" value="00">
-                                                        </div>
-                                                        <label for="id_total_detalle" class="col-sm-2 col-form-label">Total:</label>
-                                                        <div class="col-sm-3">
-                                                            <input type="text" readonly class="form-control-plaintext col-sm-10" name="id_total_detalle" id="id_total_detalle" value="00">
-                                                        </div>
-                                                        <div class="col-sm-1">
-                                                            <button type="button" class="btn btn-sm col-sm-2" onclick="clear_Detail();"><i class="fa fa-minus-circle" aria-hidden="true"></i></button>
-                                                        </div>
-                                                    </div>
-                                                    <!-- Botones -->
-                                                    <div class="dropdown-divider"></div>
-                                                    <div class="row">
-                                                        <div class="col">
-                                                            <button type="submit" class="btn btn-success"><span class="fa fa-save"></span> Guardar</button>
-                                                            <a href="{% url 'purchases:purchase_list' %}" class="btn btn-danger"><i class="far fa-hand-point-left"></i> Cancelar</a>
-                                                        </div>
-                                                    </div>
-                                                    <!-- Fin Botones -->
-                                                </div>
-                                                <!-- Fin Derecha -->
+                                    <div class="row mt-3">
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label for="id_buy_date" class="form-label">Fecha Compra:</label>
+                                                {{ purchase_form.buy_date }}
                                             </div>
-                                            <!-- Inicio Detalle -->
-                                            <div class="row">
-                                                <div class="col">
-                                                    <table class="table table-striped table-hover dt-responsive nowrap" style="width:100%" id="details-table">
-                                                        <thead>
-                                                            <th>Producto</th>        
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label for="id_order_date" class="form-label">Fecha Factura:</label>
+                                                {{ purchase_form.order_date }}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="id_observations" class="form-label">Descripción:</label>
+                                                {{ purchase_form.observations }}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="dropdown-divider mt-3"></div>
+
+                                    <!-- RESUMEN DE TOTALES MEJORADO -->
+                                    <div class="row mt-3">
+                                        <div class="col-md-8">
+                                            <h6 class="text-primary">Resumen de Productos</h6>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card bg-light">
+                                                <div class="card-body py-2">
+                                                    <div class="row">
+                                                        <div class="col-6">
+                                                            <strong>Sub Total:</strong>
+                                                        </div>
+                                                        <div class="col-6 text-end">
+                                                            <span id="display_subtotal">$0.00</span>
+                                                            {{ purchase_form.subtotal }}
+                                                        </div>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col-6">
+                                                            <strong>Descuento:</strong>
+                                                        </div>
+                                                        <div class="col-6 text-end">
+                                                            <span id="display_discount">$0.00</span>
+                                                            {{ purchase_form.discount }}
+                                                        </div>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col-6">
+                                                            <strong>IVA:</strong>
+                                                        </div>
+                                                        <div class="col-6 text-end">
+                                                            <span id="display_tax">$0.00</span>
+                                                            {{ purchase_form.tax }}
+                                                        </div>
+                                                    </div>
+                                                    <div class="row mt-2" style="border-top: 1px solid #dee2e6;">
+                                                        <div class="col-6">
+                                                            <strong class="text-success">Total:</strong>
+                                                        </div>
+                                                        <div class="col-6 text-end">
+                                                            <strong class="text-success" id="display_total_amount">$0.00</strong>
+                                                            {{ purchase_form.total_amount }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- TABLA DE PRODUCTOS AGREGADOS -->
+                                    <div class="row mt-3">
+                                        <div class="col-12">
+                                            <div class="table-responsive">
+                                                <table class="table table-striped table-hover" id="details-table">
+                                                    <thead class="table-dark">
+                                                        <tr>
+                                                            <th>Producto</th>
                                                             <th>Cantidad</th>
-                                                            <th>Precio</th>
+                                                            <th>Precio Unit.</th>
                                                             <th>Sub Total</th>
                                                             <th>Desc.</th>
                                                             <th>IVA</th>
                                                             <th>Total</th>
-                                                            <th class="all">Acciones</th>
-                                                        </thead>
-                                                        <tbody>
-                                                            {% for item in purchase_items %}
-                                                            <tr id="item-{{ item.id }}">
-                                                                <td>{{ item.product.name }}</td>
-                                                                <td>{{ item.quantity }}</td>
-                                                                <td>${{ item.unit_price }}</td>
-                                                                <td>${{ item.subtotal }}</td>
-                                                                <td>${{ item.discount }}</td>
-                                                                <td>${{ item.tax }}</td>
-                                                                <td>${{ item.total_price }}</td>
-                                                                <td>
-                                                                    <button type="button" 
-                                                                            class="btn btn-danger btn-circle btn-sm" 
-                                                                            onclick="deleteItem({{ item.id }}, {{ header.id }})"
-                                                                            title="Eliminar item">
-                                                                        <i class="fas fa-trash-alt"></i>
-                                                                    </button>
-                                                                </td>
-                                                            </tr>
-                                                            {% endfor %}
-                                                        </tbody>
-                                                    </table>
-                                                </div>
+                                                            <th>Acciones</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="items-tbody">
+                                                        {% for item in purchase_items %}
+                                                        <tr id="item-{{ item.id }}">
+                                                            <td>{{ item.product.name }}</td>
+                                                            <td>{{ item.quantity }}</td>
+                                                            <td>${{ item.unit_price }}</td>
+                                                            <td>${{ item.subtotal }}</td>
+                                                            <td>${{ item.discount }}</td>
+                                                            <td>${{ item.tax }}</td>
+                                                            <td>${{ item.total_price }}</td>
+                                                            <td>
+                                                                <button type="button" 
+                                                                        class="btn btn-danger btn-sm" 
+                                                                        onclick="deleteItem({{ item.id }}, {% if header %}{{ header.id }}{% else %}0{% endif %}, event)"
+                                                                        title="Eliminar">
+                                                                    <i class="fas fa-trash"></i>
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
                                             </div>
-                                            <!-- Fin Detalle -->
                                         </div>
                                     </div>
+
+                                    <!-- BOTONES DE ACCIÓN -->
+                                    <div class="row mt-4">
+                                        <div class="col-12">
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="fas fa-save"></i> Guardar Factura
+                                            </button>
+                                            <a href="{% url 'purchases:purchase_list' %}" class="btn btn-secondary">
+                                                <i class="fas fa-arrow-left"></i> Cancelar
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
+                        </div>
                     </div>
-                </form>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL PARA AGREGAR PRODUCTOS -->
+<div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="productModalLabel">
+                    <i class="fas fa-cart-plus"></i> Agregar Productos
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- BUSCADOR DE PRODUCTOS -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="searchProduct" placeholder="Buscar producto por nombre o código...">
+                            <button class="btn btn-outline-secondary" type="button" id="btnSearch">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TABLA DE PRODUCTOS DISPONIBLES -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                            <table class="table table-sm table-hover" id="products-table">
+                                <thead class="table-light sticky-top">
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Producto</th>
+                                        <th>Precio</th>
+                                        <th>Stock</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="products-tbody">
+                                    {% for item in products %}
+                                    <tr>
+                                        <td>{{ item.code }}</td>
+                                        <td>{{ item.name }}</td>
+                                        <td>${{ item.price }}</td>
+                                        <td>{{ item.stock }}</td>
+                                        <td>
+                                            <button type="button" class="btn btn-success btn-sm" 
+                                                    onclick="addToCart({{ item.id }}, '{{ item.name|escapejs }}', {{ item.code }}, {{ item.price }})">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FORMULARIO DE DETALLE DEL PRODUCTO -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">Detalles del Producto Seleccionado</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Producto:</label>
+                                        <input type="text" class="form-control" id="selectedProductName" readonly>
+                                        <input type="hidden" id="selectedProductId">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Cantidad:</label>
+                                        <input type="number" class="form-control" id="productQuantity" value="1" min="1">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Precio:</label>
+                                        <input type="number" class="form-control" id="productPrice" step="0.01" min="0">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Descuento %:</label>
+                                        <input type="number" class="form-control" id="productDiscount" value="0" min="0" max="100" step="0.01">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">IVA:</label>
+                                        <div class="form-check mt-2">
+                                            <input class="form-check-input" type="checkbox" id="productTax">
+                                            <label class="form-check-label" for="productTax">
+                                                Aplicar IVA (13%)
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Sub Total:</label>
+                                        <input type="text" class="form-control" id="productSubtotal" readonly value="$0.00">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" id="btnAddToInvoice">
+                    <i class="fas fa-check"></i> Agregar a Factura
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cerrar
+                </button>
             </div>
         </div>
     </div>
-
-    {% block modal %}
-<div class="modal fade" id="popup" >
 </div>
+
+{% block modal %}
+<div class="modal fade" id="popup"></div>
 {% endblock modal %}
+
 {% endblock %}
+
 {% block JavaScript %}
-
-<!-- Incluir SweetAlert2 JS -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    function open_modal(url) 
-    {
-        $('#popup').load(url, function(){
-        $(this).modal({
-            backdrop: 'static',
-            keyboard: false
-        })
-        $(this).modal('show');
-       });
-       return false;
-    }
-    function close_modal(){
-        $('#popup').modal('hide');
-        return false;
-    }
-</script>
+    // Variables globales
+    let currentProduct = null;
+    const IVA_RATE = 0.13;
 
-<script>
-    function updateTotals(totals) {
-        console.log('Actualizando totales del encabezado:', totals);
-        
-        const subtotalField = document.querySelector('[name="subtotal"]');
-        const discountField = document.querySelector('[name="discount"]');
-        const taxField = document.querySelector('[name="tax"]');
-        const totalAmountField = document.querySelector('[name="total_amount"]');
-        
-        if (totals.subtotal !== undefined && subtotalField) {
-            subtotalField.value = totals.subtotal;
-        }
-        
-        if (totals.discount !== undefined && discountField) {
-            discountField.value = totals.discount;
-        }
-        
-        if (totals.tax !== undefined && taxField) {
-            taxField.value = totals.tax;
-        }
-        
-        if (totals.total_amount !== undefined && totalAmountField) {
-            totalAmountField.value = totals.total_amount;
-        }
+    // Función para mostrar notificación toast
+    function showToast(message, type = 'success') {
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer)
+                toast.addEventListener('mouseleave', Swal.resumeTimer)
+            }
+        });
+
+        Toast.fire({
+            icon: type,
+            title: message
+        });
     }
 
-    async function deleteItem(itemId, purchaseId) {
+    // Función para buscar productos
+    document.getElementById('btnSearch').addEventListener('click', searchProducts);
+    document.getElementById('searchProduct').addEventListener('input', searchProducts);
+
+    function searchProducts() {
+        const searchTerm = document.getElementById('searchProduct').value.toLowerCase();
+        const rows = document.querySelectorAll('#products-tbody tr');
+        
+        rows.forEach(row => {
+            const productName = row.cells[1].textContent.toLowerCase();
+            const productCode = row.cells[0].textContent.toLowerCase();
+            
+            if (productName.includes(searchTerm) || productCode.includes(searchTerm)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    // Función para agregar producto al carrito temporal
+    function addToCart(productId, productName, productCode, productPrice) {
+        currentProduct = {
+            id: productId,
+            name: productName,
+            code: productCode,
+            price: productPrice
+        };
+
+        document.getElementById('selectedProductId').value = productId;
+        document.getElementById('selectedProductName').value = productName;
+        document.getElementById('productPrice').value = productPrice;
+        document.getElementById('productQuantity').value = 1;
+        document.getElementById('productDiscount').value = 0;
+        document.getElementById('productTax').checked = false;
+        
+        calculateProductTotal();
+        
+        // Mostrar notificación de producto seleccionado
+        showToast(`Producto "${productName}" seleccionado`, 'info');
+    }
+
+    // Calcular totales del producto
+    function calculateProductTotal() {
+        const quantity = parseFloat(document.getElementById('productQuantity').value) || 0;
+        const price = parseFloat(document.getElementById('productPrice').value) || 0;
+        const discountPercent = parseFloat(document.getElementById('productDiscount').value) || 0;
+        const applyTax = document.getElementById('productTax').checked;
+
+        const subtotal = quantity * price;
+        const discountAmount = subtotal * (discountPercent / 100);
+        const subtotalAfterDiscount = subtotal - discountAmount;
+        const taxAmount = applyTax ? subtotalAfterDiscount * IVA_RATE : 0;
+        const total = subtotalAfterDiscount + taxAmount;
+
+        document.getElementById('productSubtotal').value = `$${total.toFixed(2)}`;
+    }
+
+    // Event listeners para cálculos en tiempo real
+    document.getElementById('productQuantity').addEventListener('input', calculateProductTotal);
+    document.getElementById('productPrice').addEventListener('input', calculateProductTotal);
+    document.getElementById('productDiscount').addEventListener('input', calculateProductTotal);
+    document.getElementById('productTax').addEventListener('change', calculateProductTotal);
+
+    // Función para agregar producto a la factura
+    document.getElementById('btnAddToInvoice').addEventListener('click', function() {
+        if (!currentProduct) {
+            Swal.fire({
+                title: 'Producto no seleccionado',
+                text: 'Por favor selecciona un producto de la lista',
+                icon: 'warning',
+                confirmButtonColor: '#f39c12'
+            });
+            return;
+        }
+
+        const quantity = parseFloat(document.getElementById('productQuantity').value);
+        const price = parseFloat(document.getElementById('productPrice').value);
+        const discountPercent = parseFloat(document.getElementById('productDiscount').value);
+        const applyTax = document.getElementById('productTax').checked;
+
+        // Validaciones más específicas
+        if (isNaN(quantity) || quantity <= 0) {
+            Swal.fire({
+                title: 'Cantidad inválida',
+                text: 'La cantidad debe ser un número mayor a 0',
+                icon: 'error',
+                confirmButtonColor: '#e74c3c'
+            });
+            return;
+        }
+
+        if (isNaN(price) || price <= 0) {
+            Swal.fire({
+                title: 'Precio inválido',
+                text: 'El precio debe ser un número mayor a 0',
+                icon: 'error',
+                confirmButtonColor: '#e74c3c'
+            });
+            return;
+        }
+
+        if (isNaN(discountPercent) || discountPercent < 0 || discountPercent > 100) {
+            Swal.fire({
+                title: 'Descuento inválido',
+                text: 'El descuento debe estar entre 0% y 100%',
+                icon: 'error',
+                confirmButtonColor: '#e74c3c'
+            });
+            return;
+        }
+
+        // Calcular valores finales
+        const subtotal = quantity * price;
+        const discountAmount = subtotal * (discountPercent / 100);
+        const taxAmount = applyTax ? (subtotal - discountAmount) * IVA_RATE : 0;
+        const total = subtotal - discountAmount + taxAmount;
+
+        // Agregar a la tabla de detalles
+        addProductToTable(currentProduct, quantity, price, discountAmount, taxAmount, total);
+
+        // Mostrar notificación de éxito sin cerrar el modal
+        showToast(`"${currentProduct.name}" agregado a la factura`, 'success');
+
+        // Limpiar formulario pero mantener el modal abierto
+        clearProductForm();
+        
+        // Opcional: mantener el foco en el buscador para agregar otro producto
+        document.getElementById('searchProduct').focus();
+    });
+
+    // Función para agregar producto a la tabla
+    function addProductToTable(product, quantity, price, discount, tax, total) {
+        const tbody = document.getElementById('items-tbody');
+        const rowId = `temp-${Date.now()}`;
+        
+        const discountPercent = document.getElementById('productDiscount').value;
+        const applyTax = document.getElementById('productTax').checked;
+        
+        const row = document.createElement('tr');
+        row.id = rowId;
+        row.dataset.productId = product.id;
+        row.dataset.discountPercent = discountPercent;
+        row.dataset.applyTax = applyTax;
+        
+        row.innerHTML = `
+            <td>${product.name}</td>
+            <td>${quantity}</td>
+            <td>$${parseFloat(price).toFixed(2)}</td>
+            <td>$${parseFloat(quantity * price).toFixed(2)}</td>
+            <td>$${parseFloat(discount).toFixed(2)}</td>
+            <td>$${parseFloat(tax).toFixed(2)}</td>
+            <td>$${parseFloat(total).toFixed(2)}</td>
+            <td>
+                <button type="button" class="btn btn-danger btn-sm" onclick="removeTempItem('${rowId}')" title="Eliminar producto">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        
+        // Agregar animación al insertar
+        row.style.opacity = '0';
+        tbody.appendChild(row);
+        
+        // Animación de entrada
+        setTimeout(() => {
+            row.style.transition = 'opacity 0.3s ease';
+            row.style.opacity = '1';
+        }, 10);
+        
+        updateInvoiceTotals();
+        
+        // Mostrar contador de productos
+        updateProductCounter();
+    }
+
+    // Función para actualizar el contador de productos
+    function updateProductCounter() {
+        const tempItems = document.querySelectorAll('#items-tbody tr:not([id^="item-"])');
+        const counter = document.getElementById('productCounter');
+        
+        if (!counter) {
+            // Crear el contador si no existe
+            const counterElement = document.createElement('div');
+            counterElement.id = 'productCounter';
+            counterElement.className = 'badge bg-success ms-2';
+            counterElement.textContent = tempItems.length;
+            
+            const modalTitle = document.querySelector('#productModal .modal-title');
+            if (modalTitle && !modalTitle.querySelector('#productCounter')) {
+                modalTitle.appendChild(counterElement);
+            }
+        } else {
+            counter.textContent = tempItems.length;
+        }
+        
+        // Actualizar el botón de agregar productos en el main form
+        const mainButton = document.querySelector('[data-bs-target="#productModal"]');
+        if (mainButton) {
+            const existingBadge = mainButton.querySelector('.badge');
+            if (existingBadge) {
+                existingBadge.textContent = tempItems.length;
+            } else {
+                const badge = document.createElement('span');
+                badge.className = 'badge bg-success ms-2';
+                badge.textContent = tempItems.length;
+                mainButton.appendChild(badge);
+            }
+        }
+    }
+
+    // Función para eliminar item temporal
+    function removeTempItem(rowId) {
+        const row = document.getElementById(rowId);
+        if (row) {
+            // Animación de salida
+            row.style.transition = 'all 0.3s ease';
+            row.style.opacity = '0';
+            row.style.height = row.offsetHeight + 'px';
+            
+            setTimeout(() => {
+                row.style.height = '0';
+                row.style.padding = '0';
+                row.style.margin = '0';
+                row.style.border = 'none';
+            }, 300);
+            
+            setTimeout(() => {
+                row.remove();
+                updateInvoiceTotals();
+                updateProductCounter();
+                
+                // Mostrar notificación de eliminación
+                showToast('Producto eliminado de la lista', 'warning');
+            }, 600);
+        }
+    }
+
+    // Función para limpiar formulario de producto
+    function clearProductForm() {
+        currentProduct = null;
+        document.getElementById('selectedProductId').value = '';
+        document.getElementById('selectedProductName').value = '';
+        document.getElementById('productQuantity').value = 1;
+        document.getElementById('productPrice').value = '';
+        document.getElementById('productDiscount').value = 0;
+        document.getElementById('productTax').checked = false;
+        document.getElementById('productSubtotal').value = '$0.00';
+        document.getElementById('searchProduct').value = '';
+        
+        // Mostrar todos los productos nuevamente en la búsqueda
+        searchProducts();
+    }
+
+    // Función para actualizar totales de la factura
+    function updateInvoiceTotals() {
+        let subtotal = 0;
+        let discount = 0;
+        let tax = 0;
+        let total = 0;
+
+        document.querySelectorAll('#items-tbody tr').forEach(row => {
+            const cells = row.cells;
+            subtotal += parseFloat(cells[3].textContent.replace('$', ''));
+            discount += parseFloat(cells[4].textContent.replace('$', ''));
+            tax += parseFloat(cells[5].textContent.replace('$', ''));
+            total += parseFloat(cells[6].textContent.replace('$', ''));
+        });
+
+        // Actualizar displays
+        document.getElementById('display_subtotal').textContent = `$${subtotal.toFixed(2)}`;
+        document.getElementById('display_discount').textContent = `$${discount.toFixed(2)}`;
+        document.getElementById('display_tax').textContent = `$${tax.toFixed(2)}`;
+        document.getElementById('display_total_amount').textContent = `$${total.toFixed(2)}`;
+
+        // Actualizar campos ocultos del formulario
+        document.querySelector('[name="subtotal"]').value = subtotal.toFixed(2);
+        document.querySelector('[name="discount"]').value = discount.toFixed(2);
+        document.querySelector('[name="tax"]').value = tax.toFixed(2);
+        document.querySelector('[name="total_amount"]').value = total.toFixed(2);
+    }
+
+    // Función para enviar el formulario
+    document.getElementById('frmCompras').addEventListener('submit', function(e) {
+        e.preventDefault();
+        submitFormAJAX();
+    });
+
+    // Función para eliminar items existentes
+    async function deleteItem(itemId, purchaseId, event) {
+        if (!purchaseId) {
+            await Swal.fire({
+                title: 'Error',
+                text: 'ID de compra no válido',
+                icon: 'error',
+                confirmButtonColor: '#d33'
+            });
+            return;
+        }
+
         const result = await Swal.fire({
             title: '¿Estás seguro?',
             text: "¡Esta acción no se puede deshacer!",
@@ -291,20 +643,10 @@
             confirmButtonColor: '#d33',
             cancelButtonColor: '#3085d6',
             confirmButtonText: 'Sí, eliminar',
-            cancelButtonText: 'Cancelar',
-            customClass: {
-                popup: 'custom-swal-popup'
-            }
+            cancelButtonText: 'Cancelar'
         });
 
-        if (!result.isConfirmed) {
-            return;
-        }
-
-        const deleteBtn = event.target.closest('button');
-        const originalHtml = deleteBtn.innerHTML;
-        deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        deleteBtn.disabled = true;
+        if (!result.isConfirmed) return;
 
         try {
             const response = await fetch(`/purchases/delete/${purchaseId}/${itemId}/`, {
@@ -315,14 +657,11 @@
                 },
             });
 
-            if (!response.ok) {
-                throw new Error('Error en la respuesta del servidor');
-            }
-
+            if (!response.ok) throw new Error('Error en la respuesta del servidor');
+            
             const data = await response.json();
-
+            
             if (data.success) {
-                // Eliminar la fila de la tabla con animación
                 const row = document.getElementById(`item-${itemId}`);
                 if (row) {
                     row.style.transition = 'all 0.3s ease';
@@ -330,12 +669,10 @@
                     setTimeout(() => row.remove(), 300);
                 }
                 
-                // Actualizar los totales en el formulario
                 if (data.updated_totals) {
                     updateTotals(data.updated_totals);
                 }
                 
-                // Mostrar mensaje de éxito
                 await Swal.fire({
                     title: '¡Eliminado!',
                     text: 'Item eliminado correctamente',
@@ -355,21 +692,88 @@
                 icon: 'error',
                 confirmButtonColor: '#d33'
             });
-        } finally {
-            // Restaurar el botón
-            deleteBtn.innerHTML = originalHtml;
-            deleteBtn.disabled = false;
         }
     }
 
-    // Función para enviar el formulario por AJAX
+    function updateTotals(totals) {
+        document.getElementById('display_subtotal').textContent = `$${parseFloat(totals.subtotal).toFixed(2)}`;
+        document.getElementById('display_discount').textContent = `$${parseFloat(totals.discount).toFixed(2)}`;
+        document.getElementById('display_tax').textContent = `$${parseFloat(totals.tax).toFixed(2)}`;
+        document.getElementById('display_total_amount').textContent = `$${parseFloat(totals.total_amount).toFixed(2)}`;
+
+        document.querySelector('[name="subtotal"]').value = totals.subtotal;
+        document.querySelector('[name="discount"]').value = totals.discount;
+        document.querySelector('[name="tax"]').value = totals.tax;
+        document.querySelector('[name="total_amount"]').value = totals.total_amount;
+    }
+
     // Función para enviar el formulario por AJAX
     function submitFormAJAX() {
         const formData = new FormData(document.getElementById('frmCompras'));
         
-        // Mostrar indicador de carga
+        // Validaciones básicas antes de enviar
+        const supplier = document.querySelector('[name="supplier"]').value;
+        const orderNumber = document.querySelector('[name="order_number"]').value;
+        
+        if (!supplier) {
+            Swal.fire({
+                title: 'Proveedor requerido',
+                text: 'Debe seleccionar un proveedor',
+                icon: 'warning',
+                confirmButtonColor: '#f39c12'
+            });
+            return;
+        }
+        
+        if (!orderNumber) {
+            Swal.fire({
+                title: 'Número de factura requerido',
+                text: 'Debe ingresar un número de factura',
+                icon: 'warning',
+                confirmButtonColor: '#f39c12'
+            });
+            return;
+        }
+        
+        // Recolectar todos los productos de la tabla temporal
+        const products = [];
+        document.querySelectorAll('#items-tbody tr').forEach(row => {
+            if (!row.id.startsWith('item-')) { // Solo items temporales, no los existentes
+                const cells = row.cells;
+                const productId = row.dataset.productId;
+                
+                if (productId) {
+                    products.push({
+                        id: productId,
+                        quantity: parseFloat(cells[1].textContent),
+                        price: parseFloat(cells[2].textContent.replace('$', '')),
+                        discount_percent: parseFloat(row.dataset.discountPercent || 0),
+                        apply_tax: row.dataset.applyTax === 'true'
+                    });
+                }
+            }
+        });
+        
+        // Agregar los productos al FormData
+        if (products.length > 0) {
+            formData.append('products_data', JSON.stringify(products));
+        } else {
+            // Verificar si hay productos existentes
+            const existingItems = document.querySelectorAll('#items-tbody tr[id^="item-"]');
+            if (existingItems.length === 0) {
+                Swal.fire({
+                    title: 'Sin productos',
+                    text: 'Debe agregar al menos un producto a la factura',
+                    icon: 'warning',
+                    confirmButtonColor: '#f39c12'
+                });
+                return;
+            }
+        }
+        
         const submitBtn = document.querySelector('button[type="submit"]');
         const originalHtml = submitBtn.innerHTML;
+        
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
         submitBtn.disabled = true;
 
@@ -382,14 +786,11 @@
             }
         })
         .then(response => {
-            if (!response.ok) {
-                throw new Error('Error en la respuesta del servidor');
-            }
+            if (!response.ok) throw new Error('Error en la respuesta del servidor');
             return response.json();
         })
         .then(data => {
             if (data.success) {
-                // Si hay una URL de redirección (nueva factura creada)
                 if (data.redirect_url) {
                     Swal.fire({
                         title: '¡Éxito!',
@@ -399,25 +800,16 @@
                         timer: 2000,
                         showConfirmButton: false
                     }).then(() => {
-                        // Redirigir a la edición de la nueva factura
                         window.location.href = data.redirect_url;
                     });
                 } else {
-                    // Actualizar los totales en el formulario (para facturas existentes)
-                    if (data.updated_totals) {
-                        updateTotals(data.updated_totals);
-                    }
-                    
-                    // Mostrar mensaje de éxito
                     Swal.fire({
                         title: '¡Éxito!',
-                        text: data.message || 'Producto guardado correctamente',
+                        text: data.message || 'Factura guardada correctamente',
                         icon: 'success',
                         confirmButtonColor: '#3085d6',
-                        timer: 3000,
-                        showConfirmButton: false
+                        showConfirmButton: true
                     }).then(() => {
-                        // Recargar la página para mostrar los nuevos items
                         window.location.reload();
                     });
                 }
@@ -435,26 +827,36 @@
             });
         })
         .finally(() => {
-            // Restaurar el botón
             submitBtn.innerHTML = originalHtml;
             submitBtn.disabled = false;
         });
     }
 
-    // Estilos personalizados para SweetAlert2
-    const style = document.createElement('style');
-    style.textContent = `
-        .custom-swal-popup {
-            font-family: inherit;
-            border-radius: 0.5rem;
-        }
-        .swal2-confirm {
-            border-radius: 0.25rem !important;
-        }
-    `;
-    document.head.appendChild(style);
+    // Event listener para cuando se abre el modal
+    document.getElementById('productModal').addEventListener('show.bs.modal', function () {
+        updateProductCounter();
+        document.getElementById('searchProduct').focus();
+    });
+
+    // Event listener para cuando se cierra el modal
+    document.getElementById('productModal').addEventListener('hidden.bs.modal', function () {
+        clearProductForm();
+    });
+
+    // Inicialización cuando el DOM está listo
+    document.addEventListener('DOMContentLoaded', function() {
+        updateInvoiceTotals();
+        updateProductCounter();
+        
+        // Inicializar tooltips de Bootstrap
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
 </script>
 
+<!-- Mantener el JavaScript existente para datetimepicker y DataTables -->
 <script>
     $(function () {
         $("#id_buy_date, #id_order_date").datetimepicker({
@@ -462,176 +864,26 @@
             timepicker:false
         });
 
-        $("#sidebarToggle").click();
-
+        // Inicializar DataTables si es necesario
         $('.table').DataTable({
             "pageLength": 5,
             "language": {
-            "sProcessing": "Procesando...",
-            "sLengthMenu": "Mostrar _MENU_ registros",
-            "sZeroRecords": "No se encontraron resultados",
-            "sEmptyTable": "Ningún dato disponible en esta tabla",
-            "sInfo": "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
-            "sInfoEmpty": "Mostrando registros del 0 al 0 de un total de 0 registros",
-            "sInfoFiltered": "(filtrado de un total de _MAX_ registros)",
-            "sInfoPostFix": "",
-            "sSearch": "Buscar:",
-            "sUrl": "",
-            "sInfoThousands": ",",
-            "sLoadingRecords": "Cargando...",
-            "oPaginate": {
-                "sFirst": "<span class='fa fa-angle-double-left'></span>",
-                "sLast": "<span class='fa fa-angle-double-right'></span>",
-                "sNext": "<span class='fa fa-angle-right'></span>",
-                "sPrevious": "<span class='fa fa-angle-left'></span>"
-            },
-            "oAria": {
-                "sSortAscending": ": Activar para ordenar la columna de manera ascendente",
-                "sSortDescending": ": Activar para ordenar la columna de manera descendente"
-            }
+                "sProcessing": "Procesando...",
+                "sLengthMenu": "Mostrar _MENU_ registros",
+                "sZeroRecords": "No se encontraron resultados",
+                "sEmptyTable": "Ningún dato disponible en esta tabla",
+                "sInfo": "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
+                "sInfoEmpty": "Mostrando registros del 0 al 0 de un total de 0 registros",
+                "sInfoFiltered": "(filtrado de un total de _MAX_ registros)",
+                "sSearch": "Buscar:",
+                "oPaginate": {
+                    "sFirst": "<span class='fa fa-angle-double-left'></span>",
+                    "sLast": "<span class='fa fa-angle-double-right'></span>",
+                    "sNext": "<span class='fa fa-angle-right'></span>",
+                    "sPrevious": "<span class='fa fa-angle-left'></span>"
+                }
             }
         });
-
-        $('#id_cantidad_detalle,#id_precio_detalle,#id_descuento, #id_impuesto_detalle').change(function(){
-            calcular_detalle();
-        });
-
-        /*Validar y Enviar Formulario por AJAX */
-        $("#frmCompras").submit(function(e){
-            e.preventDefault();
-
-            // Validaciones básicas
-            let hasErrors = false;
-            const orderNumber = $("#id_order_number").val();
-            const buyDate = $("#id_buy_date").val();
-            const orderDate = $("#id_order_date").val();
-            const totalDetalle = $('#id_total_detalle').val();
-            const idProducto = $('#id_id_producto').val();
-
-            if(!orderNumber || orderNumber.trim() === ""){
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Debe Especificar No. de Factura'
-                });
-                hasErrors = true;
-            }
-
-            if((!buyDate || buyDate === "") || (!orderDate || orderDate === "")){
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Debe Especificar Fecha de Compra y Factura'
-                });
-                hasErrors = true;
-            }
-
-            if(!totalDetalle || totalDetalle == 0 || !idProducto || idProducto === ""){
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'No ha agregado producto o está sin cantidades'
-                });
-                hasErrors = true;
-            }
-
-            if (!hasErrors) {
-                submitFormAJAX();
-            }
-        });
-        /*Fin Validar Envío de Detalle */
     });
-
-    function selectProducto(id, name,  code, stock) {
-        $("#id_cantidad_detalle").val(1); // Cambiar a 1 en lugar de 0
-        $('#id_precio_detalle').val(0);
-        $('#id_descuento').val(0);
-        $('#id_descuento_detalle').val(0);
-        $('#id_impuesto').val(0);
-        $('#id_impuesto_detalle').prop('checked', false);
-
-        $('#id_sub_total_detalle').val(0);
-        $('#id_total_detalle').val(0);
-
-        $("#id_id_producto").val(id);
-        $('#id_descripcion_producto').val(name);
-        $('#id_cantidad_detalle').focus();
-        $('#id_cantidad_detalle').select();
-
-        // Calcular automáticamente al seleccionar producto
-        calcular_detalle();
-        
-        $('.table').DataTable().search('').draw();
-    }
-
-    function calcular_detalle() {
-        let cant, prec, descPorcentaje, descMonto, stotal, total, impuesto;
-
-        cant = parseFloat($("#id_cantidad_detalle").val()) || 0;
-        cant = cant < 0 ? 0 : cant;
-
-        prec = parseFloat($('#id_precio_detalle').val()) || 0;
-        prec = prec < 0 ? 0 : prec;
-
-        descPorcentaje = parseFloat($('#id_descuento').val()) || 0;
-        descPorcentaje = descPorcentaje < 0 ? 0 : descPorcentaje;
-        descPorcentaje = descPorcentaje > 100 ? 100 : descPorcentaje;
-
-        stotal = cant * prec;
-
-        // Calcular IVA (19%)
-        if ($("#id_impuesto_detalle").is(":checked")) {
-            impuesto = stotal * 0.19;
-        } else {
-            impuesto = 0;
-        }
-
-        // Calcular descuento en monto (sobre subtotal + IVA)
-        descMonto = (stotal + impuesto) * (descPorcentaje / 100);
-        total = (stotal + impuesto) - descMonto;
-
-        // Actualizar campos
-        $('#id_cantidad_detalle').val(cant);
-        $('#id_precio_detalle').val(prec.toFixed(2));
-        $('#id_descuento_detalle').val(descMonto.toFixed(2));
-        $('#id_sub_total_detalle').val(stotal.toFixed(2));
-        $('#id_total_detalle').val(total.toFixed(2));
-        $('#id_impuesto').val(impuesto.toFixed(2));
-    }
-
-    function clear_Detail(){
-        $('#id_cantidad_detalle').val(0);
-        $('#id_precio_detalle').val(0);
-        $('#id_descuento').val(0);
-        $('#id_descuento_detalle').val(0);
-        $('#id_impuesto_detalle').prop('checked', false);
-
-        $('#id_sub_total_detalle').val(0);
-        $('#id_total_detalle').val(0);
-        $('#id_impuesto').val(0);
-
-        $('#id_id_producto').val('');
-        $('#id_descripcion_producto').val('');
-
-        $('.table').DataTable().search('').draw();
-        // Cambiar el focus a un campo que exista
-        $("#id_cantidad_detalle").focus();
-    }
-
-    $("#id_proveedor").focus();
 </script>
-
-<script>
-    {% if messages %}  
-        {% for message in messages %}
-            Swal.fire({
-                icon: 'success',
-                title: 'Éxito',
-                text: '{{ message }}',
-                timer: 3000,
-                showConfirmButton: false
-            });
-        {% endfor %}
-    {% endif %}
-</script>
-{% endblock %}
+{% endblock JavaScript %}

@@ -151,7 +151,6 @@ class SalesListView(LoginRequiredMixin, ListView):
 
 @login_required(login_url='/login/')
 def sale_order_view(request, sale_id=None):
-
      # Verificar estado de la caja
     today = datetime.now().date()
     start_of_day = datetime.combine(today, datetime.min.time())
@@ -208,6 +207,7 @@ def sale_order_view(request, sale_id=None):
     if request.method == 'POST':
         observation = request.POST.get("observation")
         customer = request.POST.get("customer")
+        print_invoice = request.POST.get("print_invoice") == 'true'
        
         if not sale_id:
             customer_ = Customer.objects.get(pk=customer)
@@ -219,19 +219,37 @@ def sale_order_view(request, sale_id=None):
             )
             if header:
                 header.save()
-                sale_id = header.id  # Aquí se genera el sale_id
+                sale_id = header.id
                 
-                # REDIRIGIR A LA EDICIÓN DE LA NUEVA FACTURA CREADA
+                # Procesar múltiples productos si existen
+                products_data = request.POST.get("products_data")
+                if products_data:
+                    products_added = process_multiple_sale_products(header, products_data, request.user)
+                    if products_added:
+                        update_sale_totals(header)
+                
+                # SI SE SOLICITA IMPRIMIR, DEVOLVER URL DE IMPRESIÓN
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                    return JsonResponse({
-                        'success': True,
-                        'message': 'Factura creada exitosamente',
-                        'redirect_url': f'/sales/sales/update/{sale_id}/'  # Agregar esta línea
-                    })
+                    if print_invoice:
+                        return JsonResponse({
+                            'success': True,
+                            'message': 'Factura creada exitosamente',
+                            'invoice_number': header.invoice_number,
+                            'total_amount': str(header.total_amount),
+                            'print_url': reverse_lazy('sales:print_invoice', kwargs={'sale_id': header.id}),
+                            'redirect_url': f'/sales/sales/update/{sale_id}/'
+                        })
+                    else:
+                        return JsonResponse({
+                            'success': True,
+                            'message': 'Factura creada exitosamente',
+                            'redirect_url': f'/sales/sales/update/{sale_id}/'
+                        })
                 else:
-                    # Redirigir a la vista de edición de la nueva factura
-                    return redirect("sales:sale_update", sale_id=sale_id)
-                    
+                    if print_invoice:
+                        return redirect("sales:print_invoice", sale_id=sale_id)
+                    else:
+                        return redirect("sales:sale_update", sale_id=sale_id)
         else:
             header = Sale.objects.filter(pk=sale_id).first()
             if header:
@@ -239,65 +257,148 @@ def sale_order_view(request, sale_id=None):
                 header.modified_by = request.user.id
                 header.save()
         
-        # Si llegamos aquí y no hay sale_id, hubo un error
-        if not sale_id:
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Error al crear la orden de compra'
-                })
-            return redirect("sales:sale_list")
-        
-        product = request.POST.get("id_id_producto")
-        quantity = request.POST.get("id_cantidad_detalle")
-        price = request.POST.get("id_precio_detalle")
-        subtotal = request.POST.get("id_sub_total_detalle")
-        discount = request.POST.get("id_descuento_detalle")
-        tax = request.POST.get("id_impuesto")
-        total_amount = request.POST.get("id_total_detalle")
-        
-        # Validar que todos los campos necesarios estén presentes
-        if not all([product, quantity, price, subtotal, total_amount]):
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Faltan campos requeridos'
-                })
-            return redirect("sales:sale_update", sale_id=sale_id)
-        
-        try:
-            prod = Product.objects.get(pk=product)
-            
-            det = SaleDetail(
-                sale=header,
-                product=prod,
-                quantity=quantity,
-                unit_price=price,
-                discount=discount or 0,
-                subtotal=subtotal,
-                tax=tax or 0,
-                total_price=total_amount,
-                created_by=request.user
-            )
-
-            if det:
-                det.save()
-                # Recalcular totales
-                sub_total = SaleDetail.objects.filter(sale=sale_id).aggregate(Sum('subtotal'))['subtotal__sum'] or 0
-                discount_total = SaleDetail.objects.filter(sale=sale_id).aggregate(Sum('discount'))['discount__sum'] or 0
-                tax_total = SaleDetail.objects.filter(sale=sale_id).aggregate(Sum('tax'))['tax__sum'] or 0
+        # PROCESAR MÚLTIPLES PRODUCTOS (para facturas existentes)
+        products_data = request.POST.get("products_data")
+        if products_data:
+            products_added = process_multiple_sale_products(header, products_data, request.user)
+            if products_added > 0:
+                update_sale_totals(header)
                 
-                header.subtotal = sub_total
-                header.discount = discount_total
-                header.tax = tax_total
-                header.total_amount = sub_total - discount_total + tax_total
-                header.save()
-
-                # Si es AJAX, devolver JSON
+                # SI SE SOLICITA IMPRIMIR, DEVOLVER URL DE IMPRESIÓN
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    if print_invoice:
+                        return JsonResponse({
+                            'success': True,
+                            'message': f'{products_added} productos agregados correctamente',
+                            'invoice_number': header.invoice_number,
+                            'total_amount': str(header.total_amount),
+                            'print_url': reverse_lazy('sales:print_invoice', kwargs={'sale_id': header.id}),
+                            'updated_totals': {
+                                'subtotal': str(header.subtotal),
+                                'discount': str(header.discount),
+                                'tax': str(header.tax),
+                                'total_amount': str(header.total_amount),
+                            }
+                        })
+                    else:
+                        return JsonResponse({
+                            'success': True,
+                            'message': f'{products_added} productos agregados correctamente',
+                            'updated_totals': {
+                                'subtotal': str(header.subtotal),
+                                'discount': str(header.discount),
+                                'tax': str(header.tax),
+                                'total_amount': str(header.total_amount),
+                            }
+                        })
+                else:
+                    messages.success(request, f'{products_added} productos agregados correctamente.')
+                    if print_invoice:
+                        return redirect("sales:print_invoice", sale_id=sale_id)
+                    else:
+                        return redirect("sales:sale_update", sale_id=sale_id)
+            else:
+                error_msg = 'No se pudieron agregar los productos'
+        
+        # MANTENER COMPATIBILIDAD CON EL SISTEMA ANTIGUO (un solo producto)
+        individual_product = request.POST.get("id_id_producto")
+        if individual_product:
+            product = individual_product
+            quantity = request.POST.get("id_cantidad_detalle")
+            price = request.POST.get("id_precio_detalle")
+            subtotal = request.POST.get("id_sub_total_detalle")
+            discount = request.POST.get("id_descuento_detalle")
+            tax = request.POST.get("id_impuesto")
+            total_amount = request.POST.get("id_total_detalle")
+            
+            # Validar que todos los campos necesarios estén presentes
+            if not all([product, quantity, price, subtotal, total_amount]):
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                     return JsonResponse({
+                        'success': False,
+                        'error': 'Faltan campos requeridos'
+                    })
+                return redirect("sales:sale_update", sale_id=sale_id)
+            
+            try:
+                prod = Product.objects.get(pk=product)
+                
+                det = SaleDetail(
+                    sale=header,
+                    product=prod,
+                    quantity=quantity,
+                    unit_price=price,
+                    discount=discount or 0,
+                    subtotal=subtotal,
+                    tax=tax or 0,
+                    total_price=total_amount,
+                    created_by=request.user
+                )
+
+                if det:
+                    det.save()
+                    # Recalcular totales
+                    update_sale_totals(header)
+
+                    # Si es AJAX, devolver JSON
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        if print_invoice:
+                            return JsonResponse({
+                                'success': True,
+                                'message': 'Producto agregado correctamente',
+                                'invoice_number': header.invoice_number,
+                                'total_amount': str(header.total_amount),
+                                'print_url': reverse_lazy('sales:print_invoice', kwargs={'sale_id': header.id}),
+                                'updated_totals': {
+                                    'subtotal': str(header.subtotal),
+                                    'discount': str(header.discount),
+                                    'tax': str(header.tax),
+                                    'total_amount': str(header.total_amount),
+                                }
+                            })
+                        else:
+                            return JsonResponse({
+                                'success': True,
+                                'message': 'Producto agregado correctamente',
+                                'updated_totals': {
+                                    'subtotal': str(header.subtotal),
+                                    'discount': str(header.discount),
+                                    'tax': str(header.tax),
+                                    'total_amount': str(header.total_amount),
+                                }
+                            })
+                    else:
+                        messages.success(request, 'Producto agregado correctamente.')
+                        if print_invoice:
+                            return redirect("sales:print_invoice", sale_id=sale_id)
+                        else:
+                            return redirect("sales:sale_update", sale_id=sale_id)
+            
+            except Product.DoesNotExist:
+                error_msg = 'Producto no encontrado'
+            except Exception as e:
+                error_msg = f'Error al guardar: {str(e)}'
+            
+            # Manejar errores
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'error': error_msg
+                })
+            else:
+                messages.error(request, error_msg)
+                return redirect("sales:sale_update", sale_id=sale_id)
+        
+        else:
+            # No hay productos para agregar, solo actualizar la cabecera
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                if print_invoice:
+                    return JsonResponse({
                         'success': True,
-                        'message': 'Producto agregado correctamente',
+                        'message': 'Factura actualizada correctamente',
+                        'invoice_number': header.invoice_number,
+                        'total_amount': str(header.total_amount),
+                        'print_url': reverse_lazy('sales:print_invoice', kwargs={'sale_id': header.id}),
                         'updated_totals': {
                             'subtotal': str(header.subtotal),
                             'discount': str(header.discount),
@@ -306,25 +407,148 @@ def sale_order_view(request, sale_id=None):
                         }
                     })
                 else:
-                    messages.success(request, 'Producto agregado correctamente.')
+                    return JsonResponse({
+                        'success': True,
+                        'message': 'Factura actualizada correctamente',
+                        'updated_totals': {
+                            'subtotal': str(header.subtotal),
+                            'discount': str(header.discount),
+                            'tax': str(header.tax),
+                            'total_amount': str(header.total_amount),
+                        }
+                    })
+            else:
+                messages.success(request, 'Factura actualizada correctamente.')
+                if print_invoice:
+                    return redirect("sales:print_invoice", sale_id=sale_id)
+                else:
                     return redirect("sales:sale_update", sale_id=sale_id)
-        
-        except Product.DoesNotExist:
-            error_msg = 'Producto no encontrado'
-        except Exception as e:
-            error_msg = f'Error al guardar: {str(e)}'
-        
-        # Manejar errores
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': False,
-                'error': error_msg
-            })
-        else:
-            messages.error(request, error_msg)
-            return redirect("sales:sale_update", sale_id=sale_id)
 
     return render(request, template_name, context)
+
+def process_multiple_sale_products(sale_order, products_data, user):
+    """
+    Procesa múltiples productos desde un string JSON para ventas
+    """
+    try:
+        products = json.loads(products_data)
+        products_added = 0
+        
+        for product_data in products:
+            try:
+                product = Product.objects.get(pk=product_data['id'])
+                
+                # Calcular valores
+                quantity = float(product_data['quantity'])
+                unit_price = float(product_data['price'])
+                discount_percent = float(product_data.get('discount_percent', 0))
+                apply_tax = product_data.get('apply_tax', False)
+                
+                # Calcular subtotal, descuento e impuesto
+                subtotal = quantity * unit_price
+                discount_amount = subtotal * (discount_percent / 100)
+                tax_amount = (subtotal - discount_amount) * 0.13 if apply_tax else 0
+                total_price = subtotal - discount_amount + tax_amount
+                
+                # Crear el item de venta
+                sale_item = SaleDetail(
+                    sale=sale_order,
+                    product=product,
+                    quantity=quantity,
+                    unit_price=unit_price,
+                    discount=discount_amount,
+                    subtotal=subtotal,
+                    tax=tax_amount,
+                    total_price=total_price,
+                    created_by=user
+                )
+                sale_item.save()
+                products_added += 1
+                
+            except Product.DoesNotExist:
+                continue
+            except Exception as e:
+                print(f"Error al procesar producto {product_data.get('id')}: {str(e)}")
+                continue
+        
+        return products_added
+        
+    except json.JSONDecodeError:
+        return 0
+    except Exception as e:
+        print(f"Error general al procesar productos: {str(e)}")
+        return 0
+
+def update_sale_totals(sale_order):
+    """
+    Recalcula los totales de una venta
+    """
+    items = SaleDetail.objects.filter(sale=sale_order, status=True)
+    
+    subtotal = items.aggregate(Sum('subtotal'))['subtotal__sum'] or 0
+    discount = items.aggregate(Sum('discount'))['discount__sum'] or 0
+    tax = items.aggregate(Sum('tax'))['tax__sum'] or 0
+    
+    sale_order.subtotal = subtotal
+    sale_order.discount = discount
+    sale_order.tax = tax
+    sale_order.total_amount = subtotal - discount + tax
+    sale_order.save()
+
+# NUEVA VISTA PARA AGREGAR MÚLTIPLES PRODUCTOS A UNA VENTA EXISTENTE
+@login_required(login_url='/login/')
+def add_multiple_sale_products_view(request, sale_id):
+    """
+    Vista específica para agregar múltiples productos a una venta existente
+    """
+    if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        try:
+            header = Sale.objects.get(pk=sale_id)
+            products_data = request.POST.get("products_data")
+            
+            if products_data:
+                products_added = process_multiple_sale_products(header, products_data, request.user)
+                
+                if products_added > 0:
+                    # Recalcular totales
+                    update_sale_totals(header)
+                    
+                    return JsonResponse({
+                        'success': True,
+                        'message': f'{products_added} productos agregados correctamente',
+                        'updated_totals': {
+                            'subtotal': str(header.subtotal),
+                            'discount': str(header.discount),
+                            'tax': str(header.tax),
+                            'total_amount': str(header.total_amount),
+                        }
+                    })
+                else:
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'No se pudieron agregar los productos'
+                    })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'No se recibieron datos de productos'
+                })
+                
+        except Sale.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'Venta no encontrada'
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': f'Error al procesar: {str(e)}'
+            })
+    
+    return JsonResponse({
+        'success': False,
+        'error': 'Método no permitido'
+    })
 
 class SaleDeleteView(LoginRequiredMixin, AdminRequiredMixin, View):
     def post(self, request, sale_id, pk):
@@ -681,3 +905,40 @@ class DailyReportSelectDateView(LoginRequiredMixin, View):
             'available_dates': available_dates,
         }
         return render(request, template_name, context)
+
+# VISTA DE IMPRESIÓN DE FACTURA (ASEGURARSE DE QUE EXISTA)
+@login_required(login_url='/login/')
+def print_invoice(request, sale_id):
+    """
+    Vista para imprimir factura
+    """
+    try:
+        sale = Sale.objects.get(id=sale_id)
+        sale_details = SaleDetail.objects.filter(sale=sale, status=True)
+        
+        context = {
+            'sale': sale,
+            'sale_details': sale_details,
+            'business_name': 'Tu Negocio',  # Reemplazar con datos reales
+            'business_address': 'Dirección de tu negocio',
+            'business_phone': 'Teléfono de tu negocio',
+        }
+        
+        template = get_template('sales/invoice_print.html')
+        html = template.render(context)
+        
+        # Crear respuesta PDF
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'filename="factura_{sale.invoice_number}.pdf"'
+        
+        # Generar PDF
+        pisa_status = pisa.CreatePDF(html, dest=response)
+        
+        if pisa_status.err:
+            return HttpResponse('Error al generar PDF', status=500)
+        
+        return response
+        
+    except Sale.DoesNotExist:
+        messages.error(request, 'Factura no encontrada.')
+        return redirect('sales:sales_list')

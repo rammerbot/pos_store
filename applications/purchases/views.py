@@ -1,4 +1,5 @@
 import datetime
+import json
 from django.contrib import messages
 from django.shortcuts import render, redirect
 from django.views.generic import ListView, CreateView, View, UpdateView, DeleteView
@@ -158,6 +159,10 @@ def purchase_order_view(request, purchase_id=None):
         order_number = request.POST.get("order_number")
         order_date = request.POST.get("order_date")
         supplier = request.POST.get("supplier")
+        
+        # NUEVO: Obtener productos desde campos ocultos con arrays
+        products_data = request.POST.get("products_data")
+        individual_product = request.POST.get("id_id_producto")
        
         if not purchase_id:
             supplier_ = Supplier.objects.get(pk=supplier)
@@ -174,8 +179,20 @@ def purchase_order_view(request, purchase_id=None):
                 header.save()
                 purchase_id = header.id
                 
-                # CAMBIO: Redirigir a la edición de la factura recién creada
+                # Si es AJAX, procesar los productos y devolver respuesta
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    # Procesar múltiples productos si existen
+                    if products_data:
+                        products_added = process_multiple_products(header, products_data, request.user)
+                        if products_added:
+                            # Recalcular totales después de agregar productos
+                            update_purchase_totals(header)
+                            return JsonResponse({
+                                'success': True,
+                                'message': f'Factura creada con {products_added} productos',
+                                'redirect_url': reverse_lazy('purchases:purchase_update', kwargs={'purchase_id': purchase_id})
+                            })
+                    
                     return JsonResponse({
                         'success': True,
                         'message': 'Factura creada correctamente',
@@ -194,57 +211,17 @@ def purchase_order_view(request, purchase_id=None):
                 header.modified_by = request.user.id
                 header.save()
         
-        # Esta parte solo se ejecuta para facturas existentes (cuando purchase_id ya existe)
-        product = request.POST.get("id_id_producto")
-        quantity = request.POST.get("id_cantidad_detalle")
-        price = request.POST.get("id_precio_detalle")
-        subtotal = request.POST.get("id_sub_total_detalle")
-        discount = request.POST.get("id_descuento_detalle")
-        tax = request.POST.get("id_impuesto")
-        total_amount = request.POST.get("id_total_detalle")
-        
-        # Validar que todos los campos necesarios estén presentes
-        if not all([product, quantity, price, subtotal, total_amount]):
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Faltan campos requeridos'
-                })
-            return redirect("purchases:purchase_update", purchase_id=purchase_id)
-        
-        try:
-            prod = Product.objects.get(pk=product)
-            
-            det = PurchaseItem(
-                purchase_order=header,
-                product=prod,
-                quantity=quantity,
-                unit_price=price,
-                discount=discount or 0,
-                subtotal=subtotal,
-                tax=tax or 0,
-                total_price=total_amount,
-                created_by=request.user
-            )
-
-            if det:
-                det.save()
+        # PROCESAR MÚLTIPLES PRODUCTOS (para facturas existentes)
+        if products_data:
+            products_added = process_multiple_products(header, products_data, request.user)
+            if products_added > 0:
                 # Recalcular totales
-                sub_total = PurchaseItem.objects.filter(purchase_order=purchase_id).aggregate(Sum('subtotal'))['subtotal__sum'] or 0
-                discount_total = PurchaseItem.objects.filter(purchase_order=purchase_id).aggregate(Sum('discount'))['discount__sum'] or 0
-                tax_total = PurchaseItem.objects.filter(purchase_order=purchase_id).aggregate(Sum('tax'))['tax__sum'] or 0
+                update_purchase_totals(header)
                 
-                header.subtotal = sub_total
-                header.discount = discount_total
-                header.tax = tax_total
-                header.total_amount = sub_total - discount_total + tax_total
-                header.save()
-
-                # Si es AJAX, devolver JSON
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                     return JsonResponse({
                         'success': True,
-                        'message': 'Producto agregado correctamente',
+                        'message': f'{products_added} productos agregados correctamente',
                         'updated_totals': {
                             'subtotal': str(header.subtotal),
                             'discount': str(header.discount),
@@ -253,25 +230,170 @@ def purchase_order_view(request, purchase_id=None):
                         }
                     })
                 else:
-                    messages.success(request, 'Producto agregado correctamente.')
+                    messages.success(request, f'{products_added} productos agregados correctamente.')
                     return redirect("purchases:purchase_update", purchase_id=purchase_id)
+            else:
+                error_msg = 'No se pudieron agregar los productos'
         
-        except Product.DoesNotExist:
-            error_msg = 'Producto no encontrado'
-        except Exception as e:
-            error_msg = f'Error al guardar: {str(e)}'
+        # MANTENER COMPATIBILIDAD CON EL SISTEMA ANTIGUO (un solo producto)
+        elif individual_product:
+            product = individual_product
+            quantity = request.POST.get("id_cantidad_detalle")
+            price = request.POST.get("id_precio_detalle")
+            subtotal = request.POST.get("id_sub_total_detalle")
+            discount = request.POST.get("id_descuento_detalle")
+            tax = request.POST.get("id_impuesto")
+            total_amount = request.POST.get("id_total_detalle")
+            
+            # Validar que todos los campos necesarios estén presentes
+            if not all([product, quantity, price, subtotal, total_amount]):
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'Faltan campos requeridos'
+                    })
+                return redirect("purchases:purchase_update", purchase_id=purchase_id)
+            
+            try:
+                prod = Product.objects.get(pk=product)
+                
+                det = PurchaseItem(
+                    purchase_order=header,
+                    product=prod,
+                    quantity=quantity,
+                    unit_price=price,
+                    discount=discount or 0,
+                    subtotal=subtotal,
+                    tax=tax or 0,
+                    total_price=total_amount,
+                    created_by=request.user
+                )
+
+                if det:
+                    det.save()
+                    # Recalcular totales
+                    update_purchase_totals(header)
+
+                    # Si es AJAX, devolver JSON
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return JsonResponse({
+                            'success': True,
+                            'message': 'Producto agregado correctamente',
+                            'updated_totals': {
+                                'subtotal': str(header.subtotal),
+                                'discount': str(header.discount),
+                                'tax': str(header.tax),
+                                'total_amount': str(header.total_amount),
+                            }
+                        })
+                    else:
+                        messages.success(request, 'Producto agregado correctamente.')
+                        return redirect("purchases:purchase_update", purchase_id=purchase_id)
+            
+            except Product.DoesNotExist:
+                error_msg = 'Producto no encontrado'
+            except Exception as e:
+                error_msg = f'Error al guardar: {str(e)}'
+            
+            # Manejar errores
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'error': error_msg
+                })
+            else:
+                messages.error(request, error_msg)
+                return redirect("purchases:purchase_update", purchase_id=purchase_id)
         
-        # Manejar errores
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': False,
-                'error': error_msg
-            })
         else:
-            messages.error(request, error_msg)
-            return redirect("purchases:purchase_update", purchase_id=purchase_id)
+            # No hay productos para agregar, solo actualizar la cabecera
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Factura actualizada correctamente',
+                    'updated_totals': {
+                        'subtotal': str(header.subtotal),
+                        'discount': str(header.discount),
+                        'tax': str(header.tax),
+                        'total_amount': str(header.total_amount),
+                    }
+                })
+            else:
+                messages.success(request, 'Factura actualizada correctamente.')
+                return redirect("purchases:purchase_update", purchase_id=purchase_id)
 
     return render(request, template_name, context)
+
+
+def process_multiple_products(purchase_order, products_data, user):
+    """
+    Procesa múltiples productos desde un string JSON
+    """
+    try:
+        products = json.loads(products_data)
+        products_added = 0
+        
+        for product_data in products:
+            try:
+                product = Product.objects.get(pk=product_data['id'])
+                
+                # Calcular valores si no vienen en los datos
+                quantity = float(product_data['quantity'])
+                unit_price = float(product_data['price'])
+                discount_percent = float(product_data.get('discount_percent', 0))
+                apply_tax = product_data.get('apply_tax', False)
+                
+                # Calcular subtotal, descuento e impuesto
+                subtotal = quantity * unit_price
+                discount_amount = subtotal * (discount_percent / 100)
+                tax_amount = (subtotal - discount_amount) * 0.13 if apply_tax else 0
+                total_price = subtotal - discount_amount + tax_amount
+                
+                # Crear el item de compra
+                purchase_item = PurchaseItem(
+                    purchase_order=purchase_order,
+                    product=product,
+                    quantity=quantity,
+                    unit_price=unit_price,
+                    discount=discount_amount,
+                    subtotal=subtotal,
+                    tax=tax_amount,
+                    total_price=total_price,
+                    created_by=user
+                )
+                purchase_item.save()
+                products_added += 1
+                
+            except Product.DoesNotExist:
+                continue
+            except Exception as e:
+                print(f"Error al procesar producto {product_data.get('id')}: {str(e)}")
+                continue
+        
+        return products_added
+        
+    except json.JSONDecodeError:
+        return 0
+    except Exception as e:
+        print(f"Error general al procesar productos: {str(e)}")
+        return 0
+
+
+def update_purchase_totals(purchase_order):
+    """
+    Recalcula los totales de una orden de compra
+    """
+    items = PurchaseItem.objects.filter(purchase_order=purchase_order)
+    
+    subtotal = items.aggregate(Sum('subtotal'))['subtotal__sum'] or 0
+    discount = items.aggregate(Sum('discount'))['discount__sum'] or 0
+    tax = items.aggregate(Sum('tax'))['tax__sum'] or 0
+    
+    purchase_order.subtotal = subtotal
+    purchase_order.discount = discount
+    purchase_order.tax = tax
+    purchase_order.total_amount = subtotal - discount + tax
+    purchase_order.save()
 
 
 class PurchaseDeleteView(LoginRequiredMixin, AdminRequiredMixin, View):
@@ -284,7 +406,7 @@ class PurchaseDeleteView(LoginRequiredMixin, AdminRequiredMixin, View):
             purchase_item.delete()
             
             # Recalcular totales
-            self.update_purchase_totals(purchase_order)
+            update_purchase_totals(purchase_order)
             
             # Devolver respuesta JSON para AJAX
             return JsonResponse({
@@ -308,17 +430,59 @@ class PurchaseDeleteView(LoginRequiredMixin, AdminRequiredMixin, View):
                 'success': False,
                 'error': str(e)
             }, status=500)
+
+
+# NUEVA VISTA PARA AGREGAR MÚLTIPLES PRODUCTOS A UNA FACTURA EXISTENTE
+@login_required(login_url='/login/')
+def add_multiple_products_view(request, purchase_id):
+    """
+    Vista específica para agregar múltiples productos a una factura existente
+    """
+    if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        try:
+            header = PurchaseOrder.objects.get(pk=purchase_id)
+            products_data = request.POST.get("products_data")
+            
+            if products_data:
+                products_added = process_multiple_products(header, products_data, request.user)
+                
+                if products_added > 0:
+                    # Recalcular totales
+                    update_purchase_totals(header)
+                    
+                    return JsonResponse({
+                        'success': True,
+                        'message': f'{products_added} productos agregados correctamente',
+                        'updated_totals': {
+                            'subtotal': str(header.subtotal),
+                            'discount': str(header.discount),
+                            'tax': str(header.tax),
+                            'total_amount': str(header.total_amount),
+                        }
+                    })
+                else:
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'No se pudieron agregar los productos'
+                    })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'No se recibieron datos de productos'
+                })
+                
+        except PurchaseOrder.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'Factura no encontrada'
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': f'Error al procesar: {str(e)}'
+            })
     
-    def update_purchase_totals(self, purchase_order):
-        """Recalcular totales después de eliminar un item"""
-        items = PurchaseItem.objects.filter(purchase_order=purchase_order)
-        
-        subtotal = items.aggregate(Sum('subtotal'))['subtotal__sum'] or 0
-        discount = items.aggregate(Sum('discount'))['discount__sum'] or 0
-        tax = items.aggregate(Sum('tax'))['tax__sum'] or 0
-        
-        purchase_order.subtotal = subtotal
-        purchase_order.discount = discount
-        purchase_order.tax = tax
-        purchase_order.total_amount = subtotal - discount + tax
-        purchase_order.save()
+    return JsonResponse({
+        'success': False,
+        'error': 'Método no permitido'
+    })
