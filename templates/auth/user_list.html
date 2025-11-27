@@ -4,80 +4,86 @@
 
 {% block content %}
 {% include "includes/side_bar.html" %}
-    <!-- Content Wrapper -->
     <div id="content-wrapper" class="d-flex flex-column">
-        <!-- Main Content -->
         <div id="content">
             {% include "includes/header.html" %}
-            <!-- Begin Page Content -->
             <div class="container-fluid">
-                <!-- Dropdown Card  -->
+                
                 <div class="card shadow mb-4">
-                    <!-- Card Header - Dropdown -->
                     <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                         <h6 class="m-0 font-weight-bold text-primary">Lista de Usuarios</h6>
-                        <div class="dropdown no-arrow">
-                            <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                        
+                        <div class="d-flex">
+                            <a class="btn btn-primary btn-sm btn-icon-split" onclick="return open_modal('{% url 'home:create_user' %}')" href="#">
+                                <span class="icon text-white-50">
+                                    <i class="fas fa-user-plus"></i>
+                                </span>
+                                <span class="text">Nuevo Usuario</span>
                             </a>
-                            <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
-                                <div class="dropdown-header">Agregar Usuario:</div>
-                                <a class="dropdown-item" onclick="return open_modal('{% url 'home:create_user' %}')" href="#"><i class="fas fa-plus"></i> Nuevo Usuario</a>
-                                <div class="dropdown-divider"></div>
-                            </div>
                         </div>
                     </div>
-                    <!-- Card Body -->
+                    
                     <div class="card-body">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Username</th>
-                                    <th>Nombre Completo</th>
-                                    <th>Email</th>
-                                    <th>Grupos</th>
-                                    <th>Estado</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                               {% for usuario in users %}  <!-- Cambia 'user' por 'usuario' -->
-                                <tr>
-                                    <td>{{ usuario.username }}</td>
-                                    <td>{{ usuario.get_full_name }}</td>
-                                    <td>{{ usuario.email }}</td>
-                                    <td>
-                                        {% for group in usuario.groups.all %}
-                                        <span class="badge badge-primary">{{ group.name }}</span>
-                                        {% endfor %}
-                                    </td>
-                                    <td>
-                                        <span class="badge badge-{% if usuario.is_active %}success{% else %}danger{% endif %}">
-                                            {% if usuario.is_active %}Activo{% else %}Inactivo{% endif %}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <a class="btn btn-warning btn-edit" onclick="return open_modal('{% url 'home:update_user' usuario.id %}')" href="#">
-                                            <i class="fas fa-edit"></i> Editar
-                                        </a>
-                                        <button class="btn btn-{% if usuario.is_active %}danger{% else %}success{% endif %} toggle-status" 
-                                                data-user-id="{{ usuario.id }}">
-                                            {% if usuario.is_active %}<i class="fas fa-ban"></i> Desactivar{% else %}<i class="fas fa-check"></i> Activar{% endif %}
-                                        </button>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>Username</th>
+                                        <th>Nombre Completo</th>
+                                        <th>Email</th>
+                                        <th>Grupos</th>
+                                        <th class="text-center">Estado</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                   {% for usuario in users %}
+                                    <tr>
+                                        <td>{{ usuario.username }}</td>
+                                        <td>{{ usuario.get_full_name }}</td>
+                                        <td>{{ usuario.email }}</td>
+                                        <td>
+                                            {% for group in usuario.groups.all %}
+                                            <span class="badge badge-primary">{{ group.name }}</span>
+                                            {% endfor %}
+                                        </td>
+                                        
+                                        <td class="text-center status-cell">
+                                            {% if usuario.is_active %}
+                                                <span class="badge badge-success">Activo</span>
+                                            {% else %}
+                                                <span class="badge badge-danger">Inactivo</span>
+                                            {% endif %}
+                                        </td>
+                                        
+                                        <td class="text-center" style="white-space: nowrap;">
+                                            <a class="btn btn-warning btn-circle btn-sm mr-1" 
+                                               onclick="return open_modal('{% url 'home:update_user' usuario.id %}')" 
+                                               href="#" 
+                                               title="Editar Usuario">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            
+                                            <button class="btn btn-{% if usuario.is_active %}danger{% else %}success{% endif %} btn-icon-split btn-sm toggle-status" 
+                                                    data-user-id="{{ usuario.id }}"
+                                                    title="{% if usuario.is_active %}Desactivar{% else %}Activar{% endif %} Usuario">
+                                                <span class="icon text-white-50">
+                                                    {% if usuario.is_active %}<i class="fas fa-ban"></i>{% else %}<i class="fas fa-check"></i>{% endif %}
+                                                </span>
+                                                <span class="text">{% if usuario.is_active %}Desactivar{% else %}Activar{% endif %}</span>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
-            <!-- /.container-fluid -->
-        </div>
-        <!-- End of Main Content -->
+            </div>
         {% include "includes/footer.html" %}
 
-        <!-- Modal de Confirmación -->
         <div class="modal fade" id="confirmToggleModal" tabindex="-1" aria-labelledby="confirmToggleModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -88,13 +94,12 @@
                         </button>
                     </div>
                     <div class="modal-body p-0">
-                        <!-- Contenedor principal con borde izquierdo -->
                         <div class="border-left-0" id="modalBorderContainer">
                             <div class="p-3">
                                 <p class="mb-0">
                                     <span id="actionIcon"></span>
-                                    ¿Estás seguro de que deseas <span id="actionText"></span> el Producto 
-                                    <span id="categoryNameText" class="text-primary fw-bold"></span>?
+                                    ¿Estás seguro de que deseas <span id="actionText"></span> al usuario 
+                                    <span id="categoryNameText" class="text-primary font-weight-bold"></span>?
                                 </p>
                             </div>
                         </div>
@@ -108,77 +113,76 @@
         </div>
     </div>
 
-
     {% block modal %}
     <div class="modal fade" id="popup" >
     </div>
     {% endblock modal %}
 
 {% endblock content %}
+
 {% block JavaScript %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const buttons = document.querySelectorAll('.toggle-status');
-    const confirmModal = new bootstrap.Modal(document.getElementById('confirmToggleModal'));
+    const toggleButtons = document.querySelectorAll('button.toggle-status');
+    // Asumiendo BS4 por el template sb-admin-2 (usamos jQuery para modal)
+    const confirmModalEl = document.getElementById('confirmToggleModal');
     const modalBorderContainer = document.getElementById('modalBorderContainer');
     const actionIcon = document.getElementById('actionIcon');
     
-    let currentCategoryId = null;
+    let currentUserId = null;
     let currentButton = null;
     let currentRow = null;
-    let currentCategoryName = null;
+    let currentUserName = null;
     
-    buttons.forEach(button => {
-        button.addEventListener('click', function() {
-            currentCategoryId = this.getAttribute('data-user-id');
+    // Event listener solo para botones de toggle-status
+    toggleButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.stopPropagation(); 
+            
+            currentUserId = this.getAttribute('data-user-id');
             currentButton = this;
             currentRow = this.closest('tr');
             
-            // Obtener el nombre de la subcategoría desde la tabla
-            const nameCell = currentRow.querySelector('td:nth-child(2)');
-            currentCategoryName = nameCell.textContent.trim();
+            // Obtener el Username desde la tabla (Columna 1)
+            const usernameCell = currentRow.querySelector('td:nth-child(1)');
+            currentUserName = usernameCell.textContent.trim();
             
-            const currentAction = this.textContent.trim();
-            const isActivating = currentAction === 'Activar';
+            // Obtener la acción del botón
+            const currentActionText = currentButton.querySelector('.text').textContent.trim();
+            const isActivating = currentActionText === 'Activar';
             
-            // Configurar el modal con el nombre de la categoría
+            // Configurar el modal
             document.getElementById('actionText').textContent = isActivating ? 'activar' : 'desactivar';
-            document.getElementById('categoryNameText').textContent = currentCategoryName;
+            document.getElementById('categoryNameText').textContent = currentUserName;
             
-            // Configurar estilos según la acción
+            // Configurar estilos
             if (isActivating) {
-                // Estilos para activar ✅
                 modalBorderContainer.classList.remove('border-left-warning');
                 modalBorderContainer.classList.add('border-left-success');
                 modalBorderContainer.style.borderLeftWidth = '4px';
                 actionIcon.innerHTML = '✅ ';
             } else {
-                // Estilos para desactivar 🚫
                 modalBorderContainer.classList.remove('border-left-success');
                 modalBorderContainer.classList.add('border-left-warning');
                 modalBorderContainer.style.borderLeftWidth = '4px';
                 actionIcon.innerHTML = '🚫 ';
             }
             
-            confirmModal.show();
+            $('#confirmToggleModal').modal('show');
         });
     });
     
     // Manejar la confirmación
     document.getElementById('confirmToggleBtn').addEventListener('click', function() {
-        confirmModal.hide();
-        
-        // Restablecer estilos del modal
-        modalBorderContainer.classList.remove('border-left-success', 'border-left-warning');
-        modalBorderContainer.style.borderLeftWidth = '0';
-        actionIcon.innerHTML = '';
+        $('#confirmToggleModal').modal('hide');
         
         // Mostrar indicador de carga
         currentButton.disabled = true;
-        currentButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Procesando...';
+        currentButton.querySelector('.text').innerHTML = 'Procesando...';
+        currentButton.querySelector('.icon').innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
         
         const formData = new FormData();
-        formData.append('user_id', currentCategoryId);
+        formData.append('user_id', currentUserId);
         
         fetch('{% url "home:toggle_user_status" %}', {
             method: 'POST',
@@ -190,99 +194,106 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Actualizar el estado en la tabla con badge
-                const statusCell = currentRow.querySelector('td:nth-child(5)');
-                statusCell.innerHTML = data.new_status ? 
-                    '<span class="badge badge-success">Activo</span>' : 
-                    '<span class="badge badge-danger">Inactivo</span>';
+                // Actualizar el estado en la tabla (columna 5 - Estado)
+                const statusCell = currentRow.querySelector('.status-cell');
+                const isStatusActive = data.new_status;
+
+                // Actualizar Badge
+                statusCell.innerHTML = isStatusActive 
+                    ? '<span class="badge badge-success">Activo</span>' 
+                    : '<span class="badge badge-danger">Inactivo</span>';
                 
                 // Actualizar el botón
-                if (data.new_status) {
+                if (isStatusActive) {
                     currentButton.classList.remove('btn-success');
                     currentButton.classList.add('btn-danger');
-                    currentButton.innerHTML = '{% autoescape off %}<i class="fas fa-ban"></i> Desactivar{% endautoescape %}';
-                    // Mostrar mensaje de éxito para activación con nombre
-                    message(`✅ El usuario "<strong>${data.user_name}</strong>" ha sido activado exitosamente`, 'green');
+                    currentButton.querySelector('.icon').innerHTML = '<i class="fas fa-ban"></i>';
+                    currentButton.querySelector('.text').textContent = 'Desactivar';
+                    currentButton.setAttribute('title', 'Desactivar Usuario');
+                    if(typeof message === 'function') message(`✅ El usuario "<strong>${data.user_name}</strong>" ha sido activado exitosamente`, 'green');
                 } else {
                     currentButton.classList.remove('btn-danger');
                     currentButton.classList.add('btn-success');
-                    currentButton.innerHTML = '{% autoescape off %}<i class="fas fa-check"></i> Activar{% endautoescape %}';
-                    // Mostrar mensaje de éxito para desactivación con nombre
-                    message(`🚫 El usuario "<strong>${data.user_name}</strong>" ha sido desactivado exitosamente`, 'orange');
+                    currentButton.querySelector('.icon').innerHTML = '<i class="fas fa-check"></i>';
+                    currentButton.querySelector('.text').textContent = 'Activar';
+                    currentButton.setAttribute('title', 'Activar Usuario');
+                    if(typeof message === 'function') message(`🚫 El usuario "<strong>${data.user_name}</strong>" ha sido desactivado exitosamente`, 'orange');
                 }
             } else {
-                // Mostrar mensaje de error
-                message('❌ Error: ' + (data.error || 'No se pudo cambiar el estado'), 'red');
+                if(typeof message === 'function') message('❌ Error: ' + (data.error || 'No se pudo cambiar el estado'), 'red');
+                // Restaurar botón si falla
+                location.reload(); 
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            message('❌ Ocurrió un error al cambiar el estado', 'red');
+            if(typeof message === 'function') message('❌ Ocurrió un error al cambiar el estado', 'red');
+            location.reload();
         })
         .finally(() => {
             currentButton.disabled = false;
         });
     });
     
-    // Limpiar estilos cuando se cierra el modal
-    document.getElementById('confirmToggleModal').addEventListener('hidden.bs.modal', function () {
+    // Limpiar estilos al cerrar modal
+    $('#confirmToggleModal').on('hidden.bs.modal', function () {
         modalBorderContainer.classList.remove('border-left-success', 'border-left-warning');
         modalBorderContainer.style.borderLeftWidth = '0';
         actionIcon.innerHTML = '';
     });
 });
 </script>
+
 <script>
-  // Call the dataTables jQuery plugin
-  $(document).ready(function() {
-    $('.table').DataTable( {
-  dom: '<"top"fi><"toolbar">rt<"bottom"lpB><"clear">',
-  "paging":   true,
-  "ordering": true,
-  "info":     true,
-    "language": {
-        "decimal":        ".",
-        "emptyTable":     "No hay datos en la tabla",
-        "info":           "Mostrando del _START_ al _END_ de _TOTAL_ registros",
-        "infoEmpty":      "Mostrando 0 a 0 de 0 registros",
-        "infoFiltered":   "(filtrados a partir de _MAX_ registros)",
-        "infoPostFix":    "",
-        "thousands":      ",",
-        "lengthMenu":     "Mostrando _MENU_ registros",
-        "loadingRecords": "Cargando...",
-        "processing":     "Procesando...",
-        "search":         "Busqueda:",
-        "zeroRecords":    "No se encontraron registros coincidentes",
-        "paginate": {
-        "first":      "Primero",
-        "last":       "Ultimo",
-        "next":       "Siguiente",
-        "previous":   "Anterior"
-        },
-        "aria": {
-        "sortAscending":  ": activa la ordenación ascendente",
-        "sortDescending": ": activate la ordenanción descendente"
-          }
-      }      
-    }
- 
-    );
-  });
+ // Call the dataTables jQuery plugin
+ $(document).ready(function() {
+    $('#dataTable').DataTable( {
+        "destroy": true, // Importante para evitar errores de reinicialización
+        "paging":   true,
+        "ordering": true,
+        "info":     true,
+        "responsive": true,
+        "language": {
+            "decimal":        ".",
+            "emptyTable":     "No hay datos en la tabla",
+            "info":           "Mostrando del _START_ al _END_ de _TOTAL_ registros",
+            "infoEmpty":      "Mostrando 0 a 0 de 0 registros",
+            "infoFiltered":   "(filtrados a partir de _MAX_ registros)",
+            "infoPostFix":    "",
+            "thousands":      ",",
+            "lengthMenu":     "Mostrando _MENU_ registros",
+            "loadingRecords": "Cargando...",
+            "processing":     "Procesando...",
+            "search":         "Búsqueda:",
+            "zeroRecords":    "No se encontraron registros coincidentes",
+            "paginate": {
+                "first":      "Primero",
+                "last":       "Último",
+                "next":       "Siguiente",
+                "previous":   "Anterior"
+            },
+            "aria": {
+                "sortAscending":  ": activa la ordenación ascendente",
+                "sortDescending": ": activa la ordenación descendente"
+            }
+        }       
+    });
+ });
 </script>
 
 <script>
-    function open_modal(url) 
-    {
-        $('#popup').load(url, function(){
-        $(this).modal({
-            backdrop: 'static',
-            keyboard: false
-        })
-        $(this).modal('show');
-       });
-       return false;
+    function open_modal(url) {
+        $('#popup').load(url, function() {
+            $(this).modal({
+                backdrop: 'static',
+                keyboard: false
+            });
+            $(this).modal('show');
+        });
+        return false;
     }
-    function close_modal(){
+    
+    function close_modal() {
         $('#popup').modal('hide');
         return false;
     }
@@ -291,7 +302,9 @@ document.addEventListener('DOMContentLoaded', function() {
 <script>
     {% if messages %}  
         {% for message in messages %}
-            message("{{ message }}", 'green')
+            if(typeof message === "function") {
+                message("{{ message }}", 'green');
+            }
         {% endfor %}
     {% endif %}
 </script>

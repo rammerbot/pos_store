@@ -691,46 +691,32 @@ def get_customers_json(request):
 
 class CashRegisterView(LoginRequiredMixin, View):
     def get(self, request):
-        # Usar datetime.now() para obtener la fecha local correcta
         today = datetime.now().date()
-        
-        # Obtener el inicio y fin del día para filtrar correctamente
         start_of_day = datetime.combine(today, datetime.min.time())
         end_of_day = datetime.combine(today, datetime.max.time())
         
-        # Filtrar movimientos del día actual
         cash_movements = CashRegister.objects.filter(
             date__range=(start_of_day, end_of_day),
             status=True
         ).order_by('-date')
         
-        # Obtener el saldo actual (último movimiento)
         last_movement = cash_movements.first()
         current_balance = last_movement.current_balance if last_movement else 0
         
-        # Obtener saldo de apertura si existe
         opening_record = cash_movements.filter(operation_type=CashRegister.CASH_OPEN).first()
         opening_balance = opening_record.amount if opening_record else 0
         
-        # Verificar si ya hay caja abierta hoy
-        is_cash_open = cash_movements.filter(
-            operation_type=CashRegister.CASH_OPEN
-        ).exists()
-        
-        # Verificar si ya hay caja cerrada hoy
-        is_cash_closed = cash_movements.filter(
-            operation_type=CashRegister.CASH_CLOSE
-        ).exists()
-        
-        # DEBUG: Información para diagnóstico
-        print(f"DEBUG - Fecha: {today}")
-        print(f"DEBUG - Rango: {start_of_day} a {end_of_day}")
-        print(f"DEBUG - Movimientos: {cash_movements.count()}")
-        print(f"DEBUG - Aperturas encontradas: {cash_movements.filter(operation_type=CashRegister.CASH_OPEN).count()}")
-        print(f"DEBUG - Cierres encontrados: {cash_movements.filter(operation_type=CashRegister.CASH_CLOSE).count()}")
-        print(f"DEBUG - is_cash_open: {is_cash_open}")
-        print(f"DEBUG - is_cash_closed: {is_cash_closed}")
-        
+        is_cash_open = cash_movements.filter(operation_type=CashRegister.CASH_OPEN).exists()
+        is_cash_closed = cash_movements.filter(operation_type=CashRegister.CASH_CLOSE).exists()
+
+        # ← AÑADE ESTO: Ventas del día
+        sales_today = Sale.objects.filter(
+            date=today,
+            status=True
+        ).select_related('customer').order_by('-date')
+
+        total_sales_today = sales_today.aggregate(total=Sum('total_amount'))['total'] or 0
+
         form = CashRegisterForm()
         
         context = {
@@ -741,6 +727,8 @@ class CashRegisterView(LoginRequiredMixin, View):
             'form': form,
             'is_cash_open': is_cash_open,
             'is_cash_closed': is_cash_closed,
+            'sales_today': sales_today,           # ← NUEVO
+            'total_sales_today': total_sales_today, # ← NUEVO (opcional, para mostrar total)
         }
         return render(request, 'sales/cash_register.html', context)
     
@@ -869,12 +857,12 @@ class CloseCashRegisterView(LoginRequiredMixin, View):
         
         # Crear registro de cierre
         cash_register = CashRegister(
-            operation_type=CashRegister.CASH_CLOSE,
-            amount=current_balance,
-            user=request.user,
-            description='Cierre de caja diario',
+        operation_type=CashRegister.CASH_CLOSE,
+        amount=current_balance,  # Este monto es solo informativo
+        user=request.user,
+        description='Cierre de caja diario',
+        current_balance=current_balance,  # ← Este es el saldo final real
         )
-        
         cash_register.created_by = request.user
         cash_register.save()
         
