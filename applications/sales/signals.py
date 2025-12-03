@@ -9,107 +9,123 @@ from .models import Sale, CashRegister
 @receiver(post_save, sender=Sale)
 def handle_sale_cash_movement(sender, instance, created, **kwargs):
     """
-    ÚNICO signal responsable del control de caja.
-    - Crea CASH_IN al hacer una venta
-    - Crea CASH_OUT al reducir o anular una venta
-    - Ajusta automáticamente si se agrega/quita productos
+    Signal ÚNICO y DEFINITIVO para el control de caja.
+    - Registra ventas nuevas
+    - Ajusta montos al modificar
+    - Crea devoluciones/anulaciones
+    - Siempre con status=True → visible en historial
     """
+    
     # =============================================
-    # 1. VENTA ANULADA → RESTAR TODO
+    # 1. VENTA NUEVA + ACTIVA → Crear CASH_IN (el que SÍ funcionaba)
+    # =============================================
+    if created and instance.status and instance.total_amount > 0:
+        open_register = CashRegister.objects.filter(
+            operation_type=CashRegister.CASH_OPEN,
+            status=True
+        ).first()
+
+        if open_register:
+            new_movement = CashRegister.objects.create(
+                operation_type=CashRegister.CASH_IN,
+                amount=instance.total_amount,
+                user=instance.created_by,
+                description=f"Venta {instance.invoice_number} - {instance.customer.full_name()}",
+                created_by=instance.created_by,
+                date=timezone.now(),
+                status=True  # ← Crucial: aparece en la tabla
+            )
+            # Vincular inmediatamente
+            instance.cash_movement = new_movement
+            instance.save(update_fields=['cash_movement'])
+        return  # ← Salir aquí si es venta nueva
+
+    # =============================================
+    # 2. VENTA ANULADA → Crear CASH_OUT y desvincular
     # =============================================
     if not instance.status:
-        if instance.cash_movement and instance.cash_movement.operation_type == CashRegister.CASH_IN:
-            amount = instance.cash_movement.amount
-            _create_reverse_movement(
-                sale=instance,
-                amount=amount,
-                reason=f"Anulación completa de venta {instance.invoice_number}"
-            )
-            # Romper vínculo
+        if hasattr(instance, 'cash_movement') and instance.cash_movement:
+            movement = instance.cash_movement
+            if movement.operation_type == CashRegister.CASH_IN:
+                _create_reverse_movement(
+                    sale=instance,
+                    amount=movement.amount,
+                    reason=f"Anulación completa - Factura {instance.invoice_number}"
+                )
+            # Desvincular
             Sale.objects.filter(pk=instance.pk).update(cash_movement=None)
         return
 
     # =============================================
-    # 2. VERIFICAR QUE HAYA CAJA ABIERTA
+    # 3. VERIFICAR QUE HAYA CAJA ABIERTA (para modificaciones)
     # =============================================
-    today = timezone.now().date()
-    if not CashRegister.objects.filter(
-        operation_type=CashRegister.CASH_OPEN,
-        date__date=today,
-        status=True
-    ).exists():
+    if not CashRegister.objects.filter(operation_type=CashRegister.CASH_OPEN, status=True).exists():
         return
 
     # =============================================
-    # 3. YA EXISTE UN MOVIMIENTO ASOCIADO (venta ya estaba registrada)
+    # 4. VENTA MODIFICADA → Ajustar movimientos
     # =============================================
-    if instance.cash_movement:
+    if hasattr(instance, 'cash_movement') and instance.cash_movement:
         movement = instance.cash_movement
         old_amount = movement.amount
-        new_amount = Decimal(str(instance.total_amount))  # Seguro contra float
+        new_amount = Decimal(str(instance.total_amount))
 
-        # Solo actuar si el monto cambió
         if old_amount != new_amount:
-            if new_amount > old_amount:
+            diff = new_amount - old_amount
+
+            if diff > 0:
                 # Se agregó producto → ingreso adicional
-                diff = new_amount - old_amount
                 CashRegister.objects.create(
                     operation_type=CashRegister.CASH_IN,
                     amount=diff,
                     user=instance.modified_by or instance.created_by,
-                    description=f"Ajuste por aumento en venta {instance.invoice_number}",
+                    description=f"Ajuste +${diff:,.2f} - Venta {instance.invoice_number}",
                     created_by=instance.modified_by or instance.created_by,
-                    date=timezone.now()
+                    date=timezone.now(),
+                    status=True
                 )
-            else:
-                # Se quitó producto o se anuló parcialmente → devolución
-                diff = old_amount - new_amount
+            elif diff < 0:
+                # Se quitó producto → devolución parcial
                 _create_reverse_movement(
                     sale=instance,
-                    amount=diff,
+                    amount=-diff,
                     reason=f"Devolución parcial - Factura {instance.invoice_number}"
                 )
 
-            # Actualizar el movimiento original de la venta
+            # Actualizar el movimiento principal
             movement.amount = new_amount
             movement.description = f"Venta {instance.invoice_number} - {instance.customer.full_name()}"
+            movement.status = True
             movement.save()
 
     # =============================================
-    # 4. VENTA NUEVA → CREAR CASH_IN
+    # 5. VENTA NUEVA SIN MOVIMIENTO (por si falla el primer if)
     # =============================================
-    else:
-        CashRegister.objects.create(
-            operation_type=CashRegister.CASH_IN,
-            amount=instance.total_amount,
-            user=instance.created_by,
-            description=f"Venta {instance.invoice_number} - {instance.customer.full_name()}",
-            created_by=instance.created_by,
-            date=timezone.now()
-        )
-
-        # Vincular el movimiento recién creado
-        movement = CashRegister.objects.filter(
-            operation_type=CashRegister.CASH_IN,
-            amount=instance.total_amount,
-            description__contains=instance.invoice_number
-        ).order_by('-id').first()
-
-        if movement:
-            Sale.objects.filter(pk=instance.pk).update(cash_movement=movement)
+    elif not hasattr(instance, 'cash_movement') or not instance.cash_movement:
+        if instance.total_amount > 0:
+            new_movement = CashRegister.objects.create(
+                operation_type=CashRegister.CASH_IN,
+                amount=instance.total_amount,
+                user=instance.created_by,
+                description=f"Venta {instance.invoice_number} - {instance.customer.full_name()}",
+                created_by=instance.created_by,
+                date=timezone.now(),
+                status=True
+            )
+            Sale.objects.filter(pk=instance.pk).update(cash_movement=new_movement)
 
 
 # =============================================
 # FUNCIÓN AUXILIAR: Crea CASH_OUT sin duplicados
 # =============================================
 def _create_reverse_movement(sale, amount, reason):
-    """Crea un retiro de efectivo por devolución o anulación"""
+    """Crea un retiro seguro y visible"""
     if amount <= 0:
         return
 
     today = timezone.now().date()
 
-    # Evitar duplicados exactos (misma descripción + monto + día)
+    # Evitar duplicados exactos
     exists = CashRegister.objects.filter(
         operation_type=CashRegister.CASH_OUT,
         amount=amount,
@@ -124,5 +140,6 @@ def _create_reverse_movement(sale, amount, reason):
             user=sale.modified_by or sale.created_by,
             description=reason,
             created_by=sale.modified_by or sale.created_by,
-            date=timezone.now()
+            date=timezone.now(),
+            status=True  # ← Siempre visible en el historial
         )

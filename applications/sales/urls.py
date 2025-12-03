@@ -27,11 +27,16 @@ urlpatterns = [
     path('cash/register/', views.CashRegisterView.as_view(), name='cash_register'),
     path('cash/register/open/', views.OpenCashRegisterView.as_view(), name='open_cash_register'),
     path('cash/register/close/', views.CloseCashRegisterView.as_view(), name='close_cash_register'),
+    path('cash/register/add-movement/', views.AddCashMovementView.as_view(), name='add_cash_movement'),
+    path('sales/add_multiple_products/<int:sale_id>/', views.add_multiple_sale_products_view, name='sale_add_multiple_products'),
+    path('cash/force-open/', views.ForceOpenCashRegisterView.as_view(), name='force_open_cash'),
 
     # Report URLs
     path('sales/report/pdf/', reports.sales_report_to_pdf, name='sales_report_pdf'),
     path('sales/report/filter/', reports.sales_report_filter, name='sales_report_filter'),
     path('reports/sales/daily/', reports.daily_sales_report_to_pdf, name='daily_sales_report'),
+    path('reports/cash/register/', reports.cash_register_report_to_pdf, name='cash_register_report'),
+    path('reports/sales/daily/select-date/', views.DailyReportSelectDateView.as_view(), name='daily_report_select_date'),
     
     # ELIMINAR: Esta línea está duplicada
     # path('sales/print_invoice/<int:sale_id>/', reports.print_sale_invoice, name='print_sale_invoice'),
@@ -42,5 +47,5 @@ urlpatterns = [
     path('budget/create/', views.BudgetCreateView.as_view(), name='create_budget'),
     path('budget/generate/pdf/', reports.generate_budget_pdf, name='generate_budget_pdf'),
 
-    path('sales/add_multiple_products/<int:sale_id>/', views.add_multiple_sale_products_view, name='sale_add_multiple_products'),
+    
 ]

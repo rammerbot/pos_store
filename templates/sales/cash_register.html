@@ -1,6 +1,5 @@
 {% extends 'layout.html' %}
 {% load static %}
-
 {% block title %}Control de Caja{% endblock %}
 
 {% block content %}
@@ -11,181 +10,344 @@
         {% include "includes/header.html" %}
         
         <div class="container-fluid">
-            <!-- Información de Fecha -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="alert 
-                        {% if is_cash_open %}alert-success
-                        {% elif is_cash_closed %}alert-warning
-                        {% else %}alert-info{% endif %}">
-                        <h5><i class="fas fa-calendar-day"></i> Control de Caja - {{ today|date:"l, d \\d\\e F \\d\\e Y" }}</h5>
-                        <small class="text-muted">Fecha local: {% now "d/m/Y H:i:s" %}</small>
-                        <br>
-                        <small class="font-weight-bold">
-                            Estado: 
-                            {% if is_cash_open %}
-                                <span class="text-success">Caja ABIERTA</span>
-                            {% elif is_cash_closed %}
-                                <span class="text-warning">Caja CERRADA</span>
-                            {% else %}
-                                <span class="text-info">Caja SIN ABRIR</span>
-                            {% endif %}
-                        </small>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Resumen de Caja -->
-            <div class="row">
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card border-left-primary shadow h-100 py-2">
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                        Saldo Inicial
-                                    </div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                        ${{ opening_balance|floatformat:2 }}
-                                    </div>
-                                </div>
-                                <div class="col-auto">
-                                    <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
-                                </div>
-                            </div>
-                        </div>
+            <div class="container-fluid">
+                <!-- Encabezado -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h1 class="h3 mb-0 text-gray-800">
+                            <i class="fas fa-cash-register mr-2"></i>Control de Caja
+                        </h1>
+                        <p class="text-muted">
+                            {% now "l, d F Y" %} - 
+                            <span id="current-time">{% now "H:i:s" %}</span>
+                        </p>
                     </div>
                 </div>
 
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card border-left-success shadow h-100 py-2">
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                        Saldo Actual
+                <!-- Panel de Estado de Caja -->
+                <div class="row mb-4">
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="card border-left-{% if is_cash_open %}success{% else %}danger{% endif %} shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-uppercase mb-1">
+                                            Estado de Caja
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                            {% if is_cash_open %}
+                                                <span class="text-success">ABIERTA</span>
+                                            {% else %}
+                                                <span class="text-danger">CERRADA</span>
+                                            {% endif %}
+                                        </div>
                                     </div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                        ${{ current_balance|floatformat:2 }}
-                                    </div>
-                                </div>
-                                <div class="col-auto">
-                                    <i class="fas fa-wallet fa-2x text-gray-300"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card border-left-info shadow h-100 py-2">
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                        Movimientos Hoy
-                                    </div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                        {{ cash_movements.count }}
-                                    </div>
-                                </div>
-                                <div class="col-auto">
-                                    <i class="fas fa-exchange-alt fa-2x text-gray-300"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card border-left-{% if is_cash_open %}success{% elif is_cash_closed %}warning{% else %}secondary{% endif %} shadow h-100 py-2">
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-uppercase mb-1" style="color: {% if is_cash_open %}#1cc88a{% elif is_cash_closed %}#f6c23e{% else %}#858796{% endif %}">
-                                        Estado Caja
-                                    </div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                    <div class="col-auto">
                                         {% if is_cash_open %}
-                                            ABIERTA
-                                        {% elif is_cash_closed %}
-                                            CERRADA
+                                            <i class="fas fa-unlock fa-2x text-success"></i>
                                         {% else %}
-                                            SIN ABRIR
+                                            <i class="fas fa-lock fa-2x text-danger"></i>
                                         {% endif %}
                                     </div>
                                 </div>
-                                <div class="col-auto">
-                                    <i class="fas fa-{% if is_cash_open %}lock-open{% elif is_cash_closed %}lock{% else %}hourglass-start{% endif %} fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="card border-left-primary shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                            Saldo Inicial
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                            ${{ opening_balance|floatformat:2 }}
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="card border-left-info shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                            Saldo Actual
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                            ${{ current_balance|floatformat:2 }}
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-wallet fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="card border-left-warning shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                            Ventas Hoy
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                            ${{ total_sales_today|floatformat:2 }}
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-shopping-cart fa-2x text-gray-300"></i>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Botones de Acción -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card shadow">
-                        <div class="card-body">
-                            <h5 class="card-title">Acciones de Caja</h5>
-                            
-                            <!-- Botón Abrir Caja -->
-                            {% if not is_cash_open and not is_cash_closed %}
-                            <form method="post" action="{% url 'sales:open_cash_register' %}" class="d-inline">
-                                {% csrf_token %}
-                                <div class="input-group" style="max-width: 400px;">
-                                    <input type="number" name="amount" class="form-control" placeholder="Monto inicial" step="0.01" min="0" required>
-                                    <input type="text" name="description" class="form-control" placeholder="Descripción (opcional)" value="Apertura de caja">
-                                    <div class="input-group-append">
-                                        <button type="submit" class="btn btn-success">
-                                            <i class="fas fa-lock-open"></i> Abrir Caja
-                                        </button>
+                <!-- Acciones de Caja -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card shadow">
+                            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                <h6 class="m-0 font-weight-bold text-primary">Acciones de Caja</h6>
+                            </div>
+                            <div class="card-body">
+                                {% if is_cash_open %}
+                                    <!-- Caja ABIERTA - Mostrar opción de cerrar -->
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="alert alert-success">
+                                                <h5><i class="fas fa-check-circle"></i> Caja Abierta</h5>
+                                                <p class="mb-2">
+                                                    <strong>Apertura:</strong> 
+                                                    {% if open_register %}
+                                                        {{ open_register.date|date:"d/m/Y H:i" }}
+                                                    {% endif %}
+                                                </p>
+                                                <p class="mb-3">
+                                                    <strong>Saldo inicial:</strong> ${{ opening_balance|floatformat:2 }}
+                                                </p>
+                                                
+                                                <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#closeCashModal">
+                                                    <i class="fas fa-lock"></i> Cerrar Caja
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <!-- Formulario para movimiento manual -->
+                                            <h6 class="font-weight-bold mb-3">Agregar Movimiento Manual</h6>
+                                            <form method="post" action="{% url 'sales:add_cash_movement' %}">
+                                                {% csrf_token %}
+                                                <div class="form-row">
+                                                    <div class="form-group col-md-6">
+                                                        <label for="id_operation_type">Tipo de Operación</label>
+                                                        {{ form.operation_type }}
+                                                    </div>
+                                                    <div class="form-group col-md-6">
+                                                        <label for="id_amount">Monto</label>
+                                                        {{ form.amount }}
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="id_description">Descripción</label>
+                                                    {{ form.description }}
+                                                </div>
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="fas fa-plus"></i> Agregar Movimiento
+                                                </button>
+                                            </form>
+                                        </div>
                                     </div>
-                                </div>
-                            </form>
-                                                        {% else %}
-                            <button type="button" class="btn btn-success" disabled>
-                                <i class="fas fa-lock-open"></i> Caja Ya Abierta
-                            </button>
-                            {% endif %}
-                            
-                            <!-- Botón Cerrar Caja -->
-                            {% if is_cash_open and not is_cash_closed %}
-                            <form method="post" action="{% url 'sales:close_cash_register' %}" class="d-inline ml-2">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-warning">
-                                    <i class="fas fa-lock"></i> Cerrar Caja
-                                </button>
-                            </form>
-                            {% else %}
-                            <button type="button" class="btn btn-warning ml-2" disabled>
-                                <i class="fas fa-lock"></i> Cerrar Caja
-                            </button>
-                            {% endif %}
-
-                            <!-- Botón agregar movimiento manual -->
-                            {% if is_cash_open and not is_cash_closed %}
-                            <button type="button" class="btn btn-info ml-2" data-toggle="modal" data-target="#movementModal">
-                                <i class="fas fa-plus"></i> Agregar Movimiento
-                            </button>
-                            {% endif %}
-
-                            <!-- Mensajes informativos -->
-                            <div class="mt-3">
-                                {% if is_cash_closed %}
-                                <div class="alert alert-warning small mb-0">
-                                    La caja ya fue cerrada hoy.
-                                </div>
-                                {% elif not is_cash_open %}
-                                <div class="alert alert-info small mb-0">
-                                    Abra la caja para comenzar a registrar ventas.
-                                </div>
+                                    
                                 {% else %}
-                                <div class="alert alert-success small mb-0">
-                                    Caja abierta y lista para ventas.
-                                </div>
+                                    <!-- Caja CERRADA - Mostrar opción de abrir -->
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            {% if has_cash_closed_today %}
+                                                <!-- Ya existe caja cerrada hoy -->
+                                                <div class="alert alert-warning">
+                                                    <h5><i class="fas fa-exclamation-triangle"></i> Caja Cerrada Hoy</h5>
+                                                    <p class="mb-3">
+                                                        Ya existe una caja cerrada para el día de hoy. 
+                                                        Si necesitas realizar operaciones, puedes reabrir la caja.
+                                                    </p>
+                                                    
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            <button type="button" class="btn btn-success btn-block" data-toggle="modal" data-target="#openCashModal">
+                                                                <i class="fas fa-unlock"></i> Reabrir Caja
+                                                            </button>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <!-- Opción para forzar apertura si hay problemas -->
+                                                            <button type="button" class="btn btn-warning btn-block" data-toggle="modal" data-target="#forceOpenModal">
+                                                                <i class="fas fa-redo-alt"></i> Forzar Nueva Apertura
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            {% else %}
+                                                <!-- No hay caja hoy - Abrir por primera vez -->
+                                                <div class="alert alert-info">
+                                                    <h5><i class="fas fa-info-circle"></i> Caja Cerrada</h5>
+                                                    <p class="mb-3">
+                                                        La caja se encuentra cerrada. Para comenzar a operar, debes abrir la caja.
+                                                    </p>
+                                                    <button type="button" class="btn btn-success" data-toggle="modal" data-target="#openCashModal">
+                                                        <i class="fas fa-unlock"></i> Abrir Caja
+                                                    </button>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Movimientos del Día -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card shadow">
+                            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                <h6 class="m-0 font-weight-bold text-primary">Movimientos del Día - {{ today|date:"d/m/Y" }}</h6>
+                                <div class="badge badge-primary">{{ cash_movements.count }} movimientos</div>
+                            </div>
+                            <div class="card-body">
+                                {% if cash_movements %}
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-hover" id="cashMovementsTable" width="100%" cellspacing="0">
+                                            <thead class="thead-light">
+                                                <tr>
+                                                    <th>Fecha/Hora</th>
+                                                    <th>Tipo</th>
+                                                    <th>Descripción</th>
+                                                    <th>Monto</th>
+                                                    <th>Saldo</th>
+                                                    <th>Usuario</th>
+                                                    <th>Estado</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for movement in cash_movements %}
+                                                    <tr>
+                                                        <td>{{ movement.date|date:"d/m/Y H:i:s" }}</td>
+                                                        <td>
+                                                            <span class="badge badge-{% if movement.operation_type == 'open' %}success
+                                                                                        {% elif movement.operation_type == 'close' %}danger
+                                                                                        {% elif movement.operation_type == 'in' %}info
+                                                                                        {% else %}warning{% endif %}">
+                                                                {{ movement.get_operation_type_display }}
+                                                            </span>
+                                                        </td>
+                                                        <td>{{ movement.description|default:"-" }}</td>
+                                                        <td class="font-weight-bold {% if movement.operation_type == 'in' %}text-success
+                                                                                    {% elif movement.operation_type == 'out' %}text-danger
+                                                                                    {% else %}text-primary{% endif %}">
+                                                            ${{ movement.amount|floatformat:2 }}
+                                                        </td>
+                                                        <td class="font-weight-bold">${{ movement.current_balance|floatformat:2 }}</td>
+                                                        <td>{{ movement.user.get_full_name|default:movement.user.username }}</td>
+                                                        <td>
+                                                            {% if movement.status %}
+                                                                <span class="badge badge-success">Activo</span>
+                                                            {% else %}
+                                                                <span class="badge badge-secondary">Inactivo</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                            <tfoot>
+                                                <tr class="bg-light">
+                                                    <td colspan="3" class="text-right font-weight-bold">Saldo Final:</td>
+                                                    <td colspan="4" class="font-weight-bold text-primary">
+                                                        ${{ current_balance|floatformat:2 }}
+                                                    </td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                {% else %}
+                                    <div class="text-center py-5">
+                                        <i class="fas fa-receipt fa-3x text-gray-300 mb-3"></i>
+                                        <h5 class="text-gray-500">No hay movimientos registrados hoy</h5>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ventas del Día -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card shadow">
+                            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                <h6 class="m-0 font-weight-bold text-primary">Ventas del Día</h6>
+                                <div class="badge badge-success">{{ sales_today.count }} ventas</div>
+                            </div>
+                            <div class="card-body">
+                                {% if sales_today %}
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-hover" width="100%" cellspacing="0">
+                                            <thead class="thead-light">
+                                                <tr>
+                                                    <th>Factura</th>
+                                                    <th>Cliente</th>
+                                                    <th>Fecha</th>
+                                                    <th>Subtotal</th>
+                                                    <th>Descuento</th>
+                                                    <th>Impuesto</th>
+                                                    <th>Total</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for sale in sales_today %}
+                                                    <tr>
+                                                        <td>
+                                                            <a href="{% url 'sales:sale_update' sale.id %}" class="text-primary">
+                                                                {{ sale.invoice_number }}
+                                                            </a>
+                                                        </td>
+                                                        <td>{{ sale.customer.full_name }}</td>
+                                                        <td>{{ sale.date|date:"d/m/Y H:i" }}</td>
+                                                        <td>${{ sale.subtotal|floatformat:2 }}</td>
+                                                        <td>${{ sale.discount|floatformat:2 }}</td>
+                                                        <td>${{ sale.tax|floatformat:2 }}</td>
+                                                        <td class="font-weight-bold text-success">${{ sale.total_amount|floatformat:2 }}</td>
+                                                    </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                            <tfoot>
+                                                <tr class="bg-light">
+                                                    <td colspan="3" class="text-right font-weight-bold">Total Ventas Hoy:</td>
+                                                    <td colspan="4" class="font-weight-bold text-success">
+                                                        ${{ total_sales_today|floatformat:2 }}
+                                                    </td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                {% else %}
+                                    <div class="text-center py-5">
+                                        <i class="fas fa-shopping-cart fa-3x text-gray-300 mb-3"></i>
+                                        <h5 class="text-gray-500">No hay ventas registradas hoy</h5>
+                                    </div>
                                 {% endif %}
                             </div>
                         </div>
@@ -193,183 +355,235 @@
                 </div>
             </div>
 
-            <!-- NUEVA SECCIÓN: Ventas del Día (Automáticas) -->
-<!-- NUEVA SECCIÓN: Ventas del Día (Automáticas) -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card shadow">
-            <div class="card-header py-3 bg-primary text-white">
-                <h6 class="m-0 font-weight-bold">
-                    Ventas del Día (Registradas Automáticamente)
-                </h6>
+            <!-- Modal Abrir Caja -->
+            <div class="modal fade" id="openCashModal" tabindex="-1" role="dialog" aria-labelledby="openCashModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="openCashModalLabel">
+                                <i class="fas fa-unlock mr-2"></i>Abrir Caja
+                            </h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <form method="post" action="{% url 'sales:open_cash_register' %}">
+                            {% csrf_token %}
+                            <div class="modal-body">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i> Se abrirá la caja para el día de hoy: {{ today|date:"d/m/Y" }}
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="amount">Monto Inicial *</label>
+                                    <input type="number" 
+                                        class="form-control" 
+                                        id="amount" 
+                                        name="amount" 
+                                        step="0.01" 
+                                        min="0" 
+                                        value="0.00" 
+                                        required>
+                                    <small class="form-text text-muted">Ingrese el monto con el que inicia la caja.</small>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="description">Descripción (Opcional)</label>
+                                    <textarea class="form-control" 
+                                            id="description" 
+                                            name="description" 
+                                            rows="2"
+                                            placeholder="Ej: Apertura de turno matutino"></textarea>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-check"></i> Abrir Caja
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
-                {% if sales_today %}
-                <div class="table-responsive">
-                    <table class="table table-bordered table-hover" width="100%" cellspacing="0">
-                        <thead class="thead-light">
-                            <tr>
-                                <th>Factura</th>
-                                <th>Cliente</th>
-                                <th>Hora</th>
-                                <th class="text-right">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for sale in sales_today %}
-                            <tr>
-                                <td>
-                                    <span class="badge badge-pill badge-info font-weight-bold">
-                                        {{ sale.invoice_number }}
-                                    </span>
-                                </td>
-                                <td>{{ sale.customer.full_name }}</td>
-                                <td>{{ sale.date|date:"H:i" }}</td>
-                                <td class="text-right font-weight-bold text-success">
-                                    ${{ sale.total_amount|floatformat:2 }}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                        <tfoot>
-                            <tr class="table-active font-weight-bold bg-light">
-                                <td colspan="3" class="text-right">TOTAL VENTAS DEL DÍA:</td>
-                                <td class="text-right text-primary h5 mb-0">
-                                    ${{ total_sales_today|floatformat:2 }}
-                                </td>
-                            </tr>
-                        </tfoot>
-                    </table>
+
+            <!-- Modal Forzar Apertura -->
+            <div class="modal fade" id="forceOpenModal" tabindex="-1" role="dialog" aria-labelledby="forceOpenModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="forceOpenModalLabel">
+                                <i class="fas fa-exclamation-triangle mr-2 text-warning"></i>Forzar Apertura de Caja
+                            </h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <form method="post" action="{% url 'sales:force_open_cash' %}">
+                            {% csrf_token %}
+                            <div class="modal-body">
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle"></i> 
+                                    <strong>Atención:</strong> Esta acción creará una nueva apertura de caja 
+                                    aunque ya exista una cerrada hoy. Use solo si es necesario.
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="force_amount">Monto Inicial *</label>
+                                    <input type="number" 
+                                        class="form-control" 
+                                        id="force_amount" 
+                                        name="amount" 
+                                        step="0.01" 
+                                        min="0" 
+                                        value="0.00" 
+                                        required>
+                                    <small class="form-text text-muted">Saldo inicial para la nueva apertura.</small>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="fas fa-redo-alt"></i> Forzar Apertura
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-                {% else %}
-                <div class="text-center py-5 text-muted">
-                    <p>No se han registrado ventas hoy.</p>
+            </div>
+
+            <!-- Modal Cerrar Caja -->
+            <div class="modal fade" id="closeCashModal" tabindex="-1" role="dialog" aria-labelledby="closeCashModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="closeCashModalLabel">
+                                <i class="fas fa-lock mr-2"></i>Cerrar Caja
+                            </h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <form method="post" action="{% url 'sales:close_cash_register' %}">
+                            {% csrf_token %}
+                            <div class="modal-body">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i> 
+                                    <strong>Saldo teórico actual:</strong> ${{ current_balance|floatformat:2 }}
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="real_amount">Monto Real en Caja *</label>
+                                    <input type="number" 
+                                        class="form-control" 
+                                        id="real_amount" 
+                                        name="real_amount" 
+                                        step="0.01" 
+                                        min="0" 
+                                        value="{{ current_balance|floatformat:2 }}" 
+                                        required>
+                                    <small class="form-text text-muted">
+                                        Ingrese el monto físico que hay en la caja. 
+                                        Se calculará la diferencia automáticamente.
+                                    </small>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="observations">Observaciones (Opcional)</label>
+                                    <textarea class="form-control" 
+                                            id="observations" 
+                                            name="observations" 
+                                            rows="3"
+                                            placeholder="Ej: Retiro para compra de materiales, pago de servicios, etc."></textarea>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-lock"></i> Cerrar Caja
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-                {% endif %}
             </div>
         </div>
     </div>
 </div>
 
-            <!-- Movimientos de Caja (Historial completo) -->
-            <div class="row">
-                <div class="col-12">
-                    <div class="card shadow">
-                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                            <h6 class="m-0 font-weight-bold text-primary">
-                                Historial de Movimientos - {{ today|date:"d/m/Y" }}
-                            </h6>
-                            <span class="badge 
-                                {% if is_cash_open %}badge-success
-                                {% elif is_cash_closed %}badge-warning
-                                {% else %}badge-secondary{% endif %}">
-                                {% if is_cash_open %}Caja Abierta
-                                {% elif is_cash_closed %}Caja Cerrada
-                                {% else %}Sin Apertura{% endif %}
-                            </span>
-                        </div>
-                        <div class="card-body">
-                            {% if cash_movements %}
-                            <div class="table-responsive">
-                                <table class="table table-bordered" id="cashMovementsTable" width="100%" cellspacing="0">
-                                    <thead>
-                                        <tr>
-                                            <th>Hora</th>
-                                            <th>Tipo</th>
-                                            <th>Descripción</th>
-                                            <th>Monto</th>
-                                            <th>Saldo</th>
-                                            <th>Usuario</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for movement in cash_movements %}
-                                        <tr>
-                                            <td>{{ movement.date|date:"H:i" }}</td>
-                                            <td>
-                                                <span class="badge 
-                                                    {% if movement.operation_type == 'open' %}badge-success
-                                                    {% elif movement.operation_type == 'close' %}badge-warning
-                                                    {% elif movement.operation_type == 'in' %}badge-info
-                                                    {% else %}badge-danger{% endif %}">
-                                                    {{ movement.get_operation_type_display }}
-                                                </span>
-                                            </td>
-                                            <td>{{ movement.description|default:"-" }}</td>
-                                            <td class="text-right">${{ movement.amount|floatformat:2 }}</td>
-                                            <td class="text-right">${{ movement.current_balance|floatformat:2 }}</td>
-                                            <td>{{ movement.user.username }}</td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                            {% else %}
-                            <div class="text-center py-4">
-                                <i class="fas fa-cash-register fa-3x text-gray-300 mb-3"></i>
-                                <h5 class="text-gray-500">No hay movimientos registrados hoy</h5>
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- Modal para agregar movimiento manual -->
-{% if is_cash_open and not is_cash_closed %}
-<div class="modal fade" id="movementModal" tabindex="-1" role="dialog" aria-labelledby="movementModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="movementModalLabel">Agregar Movimiento de Caja</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">×</span>
-                </button>
-            </div>
-            <form method="post" action="{% url 'sales:cash_register' %}">
-                {% csrf_token %}
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label for="id_operation_type">Tipo de Movimiento</label>
-                        {{ form.operation_type }}
-                    </div>
-                    <div class="form-group">
-                        <label for="id_amount">Monto</label>
-                        {{ form.amount }}
-                    </div>
-                    <div class="form-group">
-                        <label for="id_description">Descripción</label>
-                        {{ form.description }}
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar Movimiento</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-{% endif %}
 {% endblock %}
 
-{% block JavaScript %}
+{% block j %}
 <script>
-    $(document).ready(function() {
-        var table = $('#cashMovementsTable');
-        if (table.length) {
-            table.DataTable({
-                "pageLength": 15,
-                "language": {
-                    "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
-                },
-                "order": [[0, "desc"]]
-            });
+// Actualizar hora en tiempo real
+function updateCurrentTime() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('es-ES', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit' 
+    });
+    document.getElementById('current-time').textContent = timeString;
+}
+
+// Inicializar y actualizar cada segundo
+setInterval(updateCurrentTime, 1000);
+updateCurrentTime();
+
+// Validación de formularios
+$(document).ready(function() {
+    // Validar monto positivo
+    $('#amount, #force_amount, #real_amount').on('change', function() {
+        const value = parseFloat($(this).val());
+        if (value < 0) {
+            $(this).val('0.00');
+            alert('El monto no puede ser negativo');
         }
     });
+    
+    // DataTable para movimientos
+    if ($('#cashMovementsTable').length) {
+        $('#cashMovementsTable').DataTable({
+            "order": [[0, "desc"]],
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
+            },
+            "pageLength": 10,
+            "responsive": true
+        });
+    }
+    
+    // Mostrar diferencia al cerrar caja
+    $('#real_amount').on('input', function() {
+        const realAmount = parseFloat($(this).val()) || 0;
+        const theoretical = parseFloat('{{ current_balance }}') || 0;
+        const difference = realAmount - theoretical;
+        
+        // Actualizar mensaje informativo
+        const infoDiv = $(this).closest('.modal-body').find('.alert-info');
+        if (difference !== 0) {
+            infoDiv.html(`
+                <i class="fas fa-info-circle"></i> 
+                <strong>Saldo teórico:</strong> $${theoretical.toFixed(2)} |
+                <strong>Diferencia:</strong> 
+                <span class="${difference >= 0 ? 'text-success' : 'text-danger'}">
+                    $${difference.toFixed(2)}
+                </span>
+            `);
+        } else {
+            infoDiv.html(`
+                <i class="fas fa-info-circle"></i> 
+                <strong>Saldo teórico actual:</strong> $${theoretical.toFixed(2)}
+            `);
+        }
+    });
+});
+
+// Confirmación para acciones críticas
+function confirmAction(action, message) {
+    return confirm(message || `¿Está seguro de que desea ${action}?`);
+}
 </script>
 
 <script>
@@ -386,3 +600,4 @@
     {% endif %}
 </script>
 {% endblock %}
+

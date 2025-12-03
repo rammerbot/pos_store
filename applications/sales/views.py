@@ -134,18 +134,23 @@ class SalesListView(LoginRequiredMixin, ListView):
         start_of_day = datetime.combine(today, datetime.min.time())
         end_of_day = datetime.combine(today, datetime.max.time())
         
-        cash_movements = CashRegister.objects.filter(
+        # Verificar si hay caja abierta HOY
+        is_cash_open_today = CashRegister.objects.filter(
+            operation_type=CashRegister.CASH_OPEN,
             date__range=(start_of_day, end_of_day),
-            status=True
-        )
-        
-        is_cash_open = cash_movements.filter(operation_type=CashRegister.CASH_OPEN).exists()
-        is_cash_closed = cash_movements.filter(operation_type=CashRegister.CASH_CLOSE).exists()
-        
-        # Si la caja no está abierta o ya está cerrada, mostrar error
-        if not is_cash_open or is_cash_closed:
-            messages.error(request, '❌ No se puede acceder a las ventas. La caja no está abierta o ya fue cerrada.')
-            return redirect('sales:cash_register')
+            status=True,
+            user=request.user
+        ).exists()
+
+        if not is_cash_open_today:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'error': 'No hay caja abierta hoy. Debe abrir una para realizar ventas.'
+                }, status=403)
+            else:
+                messages.error(request, 'No hay caja abierta hoy. Debe abrir una para realizar ventas.')
+                return redirect('sales:cash_register')
         
         return super().get(request, *args, **kwargs)
 
@@ -156,23 +161,22 @@ def sale_order_view(request, sale_id=None):
     start_of_day = datetime.combine(today, datetime.min.time())
     end_of_day = datetime.combine(today, datetime.max.time())
     
-    cash_movements = CashRegister.objects.filter(
+    # Verificar si hay caja abierta HOY
+    is_cash_open_today = CashRegister.objects.filter(
+        operation_type=CashRegister.CASH_OPEN,
         date__range=(start_of_day, end_of_day),
-        status=True
-    )
-    
-    is_cash_open = cash_movements.filter(operation_type=CashRegister.CASH_OPEN).exists()
-    is_cash_closed = cash_movements.filter(operation_type=CashRegister.CASH_CLOSE).exists()
-    
-    # Si la caja no está abierta o ya está cerrada, mostrar error
-    if not is_cash_open or is_cash_closed:
+        status=True,
+        user=request.user
+    ).exists()
+
+    if not is_cash_open_today:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
                 'success': False,
-                'error': 'No se puede realizar ventas. La caja no está abierta o ya fue cerrada.'
+                'error': 'No hay caja abierta hoy. Debe abrir una para realizar ventas.'
             }, status=403)
         else:
-            messages.error(request, '❌ No se puede realizar ventas. La caja no está abierta o ya fue cerrada.')
+            messages.error(request, 'No hay caja abierta hoy. Debe abrir una para realizar ventas.')
             return redirect('sales:cash_register')
 
     template_name = "sales/sale.html"
@@ -691,184 +695,369 @@ def get_customers_json(request):
 
 class CashRegisterView(LoginRequiredMixin, View):
     def get(self, request):
-        today = datetime.now().date()
-        start_of_day = datetime.combine(today, datetime.min.time())
-        end_of_day = datetime.combine(today, datetime.max.time())
+        # Primero, cerrar cajas antiguas automáticamente
+        self.close_old_cash_registers(request.user)
         
+        hoy = timezone.now().date()
+        start_of_day = timezone.make_aware(datetime.combine(hoy, datetime.min.time()))
+        end_of_day = timezone.make_aware(datetime.combine(hoy, datetime.max.time()))
+        
+        # Todos los movimientos del día
         cash_movements = CashRegister.objects.filter(
             date__range=(start_of_day, end_of_day),
-            status=True
+            user=request.user
         ).order_by('-date')
         
-        last_movement = cash_movements.first()
-        current_balance = last_movement.current_balance if last_movement else 0
+        # Caja abierta HOY
+        open_register_today = CashRegister.objects.filter(
+            operation_type=CashRegister.CASH_OPEN,
+            date__range=(start_of_day, end_of_day),
+            status=True,
+            user=request.user
+        ).first()
         
-        opening_record = cash_movements.filter(operation_type=CashRegister.CASH_OPEN).first()
-        opening_balance = opening_record.amount if opening_record else 0
+        is_cash_open_today = open_register_today is not None
         
-        is_cash_open = cash_movements.filter(operation_type=CashRegister.CASH_OPEN).exists()
-        is_cash_closed = cash_movements.filter(operation_type=CashRegister.CASH_CLOSE).exists()
-
-        # ← AÑADE ESTO: Ventas del día
+        # Caja cerrada HOY
+        closed_register_today = CashRegister.objects.filter(
+            operation_type=CashRegister.CASH_OPEN,
+            date__range=(start_of_day, end_of_day),
+            status=False,
+            user=request.user
+        ).first()
+        
+        # Saldo actual: último movimiento activo del usuario
+        last_active = CashRegister.objects.filter(
+            user=request.user
+        ).order_by('-date', '-id').first()
+        
+        current_balance = last_active.current_balance if last_active else Decimal('0.00')
+        
+        # Saldo inicial del turno actual
+        opening_balance = open_register_today.amount if open_register_today else Decimal('0.00')
+        
+        # Ventas del día
         sales_today = Sale.objects.filter(
-            date=today,
-            status=True
-        ).select_related('customer').order_by('-date')
-
-        total_sales_today = sales_today.aggregate(total=Sum('total_amount'))['total'] or 0
-
+            date__date=hoy,
+            status=True,
+            created_by=request.user
+        ).order_by('-date')
+        
+        total_sales_today = sales_today.aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
+        
+        # Formulario para movimiento manual
         form = CashRegisterForm()
         
         context = {
             'cash_movements': cash_movements,
             'current_balance': current_balance,
             'opening_balance': opening_balance,
-            'today': today,
+            'is_cash_open': is_cash_open_today,  # Solo true si hay caja abierta HOY
+            'open_register': open_register_today,
+            'closed_register_today': closed_register_today,  # Para mostrar mensaje
+            'today': hoy,
             'form': form,
-            'is_cash_open': is_cash_open,
-            'is_cash_closed': is_cash_closed,
-            'sales_today': sales_today,           # ← NUEVO
-            'total_sales_today': total_sales_today, # ← NUEVO (opcional, para mostrar total)
+            'sales_today': sales_today,
+            'total_sales_today': total_sales_today,
+            'is_cash_closed': not is_cash_open_today,
+            'has_cash_closed_today': closed_register_today is not None,  # Nueva variable
         }
         return render(request, 'sales/cash_register.html', context)
     
-    def post(self, request):
-        form = CashRegisterForm(request.POST)
-        if form.is_valid():
-            cash_register = form.save(commit=False)
-            cash_register.user = request.user
-            cash_register.created_by = request.user
-            cash_register.save()
+    def close_old_cash_registers(self, user):
+        """Cierra automáticamente cajas abiertas de días anteriores"""
+        hoy = timezone.now().date()
+        start_of_day = timezone.make_aware(datetime.combine(hoy, datetime.min.time()))
+        
+        # Encontrar y cerrar cajas abiertas de días anteriores
+        old_open_cash = CashRegister.objects.filter(
+            operation_type=CashRegister.CASH_OPEN,
+            date__lt=start_of_day,
+            status=True,
+            user=user
+        )
+        
+        for cash in old_open_cash:
+            cash.status = False
+            cash.save()
             
-            messages.success(request, 'Movimiento de caja registrado correctamente.')
-            return redirect('sales:cash_register')
-        
-        # Si el formulario no es válido, recargar la página con errores
-        today = datetime.now().date()
-        
-        # Obtener el inicio y fin del día para filtrar correctamente
-        start_of_day = datetime.combine(today, datetime.min.time())
-        end_of_day = datetime.combine(today, datetime.max.time())
-        
-        cash_movements = CashRegister.objects.filter(
-            date__range=(start_of_day, end_of_day),
-            status=True
-        ).order_by('-date')
-        
-        last_movement = cash_movements.first()
-        current_balance = last_movement.current_balance if last_movement else 0
-        
-        opening_record = cash_movements.filter(operation_type=CashRegister.CASH_OPEN).first()
-        opening_balance = opening_record.amount if opening_record else 0
-        
-        is_cash_open = cash_movements.filter(
-            operation_type=CashRegister.CASH_OPEN
-        ).exists()
-        
-        is_cash_closed = cash_movements.filter(
-            operation_type=CashRegister.CASH_CLOSE
-        ).exists()
-        
-        context = {
-            'cash_movements': cash_movements,
-            'current_balance': current_balance,
-            'opening_balance': opening_balance,
-            'today': today,
-            'form': form,
-            'is_cash_open': is_cash_open,
-            'is_cash_closed': is_cash_closed,
-        }
-        return render(request, 'sales/cash_register.html', context)
+            # Registrar cierre automático
+            CashRegister.objects.create(
+                operation_type=CashRegister.CASH_CLOSE,
+                amount=cash.current_balance,
+                user=user,
+                description=f"Cierre automático - caja del {cash.date.date()}",
+                current_balance=cash.current_balance,
+                created_by=user
+            )
+
 
 class OpenCashRegisterView(LoginRequiredMixin, View):
     def post(self, request):
         amount = request.POST.get('amount')
-        description = request.POST.get('description', 'Apertura de caja')
+        description = request.POST.get('description', '').strip() or 'Apertura de caja'
         
         if not amount:
-            messages.error(request, 'El monto de apertura es requerido.')
+            messages.error(request, 'El monto de apertura es obligatorio.')
             return redirect('sales:cash_register')
         
         try:
             amount = Decimal(amount)
             if amount < 0:
-                raise ValueError("El monto no puede ser negativo")
-                
-            # Verificar si ya hay una caja abierta hoy
-            today = datetime.now().date()
-            existing_open = CashRegister.objects.filter(
-                date__date=today,
+                raise ValueError()
+            
+            # 1. Cerrar cajas abiertas de días anteriores
+            self.close_old_cash_registers(request.user)
+            
+            hoy = timezone.now().date()
+            start_of_day = timezone.make_aware(datetime.combine(hoy, datetime.min.time()))
+            end_of_day = timezone.make_aware(datetime.combine(hoy, datetime.max.time()))
+            
+            # 2. Verificar si ya existe caja abierta HOY
+            open_cash_today = CashRegister.objects.filter(
                 operation_type=CashRegister.CASH_OPEN,
-                status=True
-            ).exists()
+                date__range=(start_of_day, end_of_day),
+                status=True,
+                user=request.user
+            ).first()
             
-            if existing_open:
-                messages.warning(request, 'Ya existe una apertura de caja para hoy.')
+            if open_cash_today:
+                messages.warning(request, 'Ya tienes una caja abierta hoy.')
                 return redirect('sales:cash_register')
             
-            # Verificar si ya hay caja cerrada hoy
-            existing_closed = CashRegister.objects.filter(
-                date__date=today,
-                operation_type=CashRegister.CASH_CLOSE,
-                status=True
-            ).exists()
+            # 3. Verificar si existe caja cerrada HOY
+            closed_cash_today = CashRegister.objects.filter(
+                operation_type=CashRegister.CASH_OPEN,
+                date__range=(start_of_day, end_of_day),
+                status=False,  # Cerrada
+                user=request.user
+            ).first()
             
-            if existing_closed:
-                messages.warning(request, 'La caja ya fue cerrada hoy. No se puede abrir nuevamente.')
+            if closed_cash_today:
+                # Ofrecer reabrir la caja existente
+                # En lugar de crear nueva, cambiamos el estado
+                closed_cash_today.status = True
+                closed_cash_today.amount = amount
+                closed_cash_today.current_balance = amount
+                closed_cash_today.save()
+                
+                messages.success(request, f'Caja reabierta con saldo inicial de ${amount:,.2f}')
                 return redirect('sales:cash_register')
             
-            # Crear registro de apertura con el usuario
-            cash_register = CashRegister(
+            # 4. Crear nueva apertura (primera del día)
+            CashRegister.objects.create(
                 operation_type=CashRegister.CASH_OPEN,
                 amount=amount,
                 user=request.user,
-                description=description,
+                description=f"{description} - {request.user.get_full_name() or request.user.username}",
+                created_by=request.user,
+                status=True,
+                current_balance=amount  # Importante: establecer saldo inicial
             )
             
-            cash_register.created_by = request.user
-            cash_register.save()
+            messages.success(request, f'Caja abierta correctamente con ${amount:,.2f}')
+            return redirect('sales:cash_register')
             
-            messages.success(request, f'Caja abierta con ${amount:.2f}')
-            
-        except (ValueError, InvalidOperation) as e:
-            messages.error(request, f'Error al abrir caja: {str(e)}')
+        except (InvalidOperation, ValueError):
+            messages.error(request, 'Monto inválido.')
+            return redirect('sales:cash_register')
+    
+    def close_old_cash_registers(self, user):
+        """Cierra automáticamente cajas abiertas de días anteriores"""
+        hoy = timezone.now().date()
+        start_of_day = timezone.make_aware(datetime.combine(hoy, datetime.min.time()))
         
-        return redirect('sales:cash_register')
+        # Encontrar y cerrar cajas abiertas de días anteriores
+        old_open_cash = CashRegister.objects.filter(
+            operation_type=CashRegister.CASH_OPEN,
+            date__lt=start_of_day,
+            status=True,
+            user=user
+        )
+        
+        for cash in old_open_cash:
+            cash.status = False
+            cash.save()
+            
+            # Registrar cierre automático
+            CashRegister.objects.create(
+                operation_type=CashRegister.CASH_CLOSE,
+                amount=cash.current_balance,
+                user=user,
+                description=f"Cierre automático - caja del {cash.date.date()}",
+                current_balance=cash.current_balance,
+                created_by=user
+            )
+
 
 class CloseCashRegisterView(LoginRequiredMixin, View):
     def post(self, request):
-        today = datetime.now().date()
+        real_amount = request.POST.get('real_amount')
+        observations = request.POST.get('observations', '').strip()
         
-        # Obtener el inicio y fin del día para filtrar correctamente
-        start_of_day = datetime.combine(today, datetime.min.time())
-        end_of_day = datetime.combine(today, datetime.max.time())
+        # Buscar la caja abierta HOY
+        hoy = timezone.now().date()
+        start_of_day = timezone.make_aware(datetime.combine(hoy, datetime.min.time()))
+        end_of_day = timezone.make_aware(datetime.combine(hoy, datetime.max.time()))
         
-        # Obtener el saldo actual
-        last_movement = CashRegister.objects.filter(
+        open_register = CashRegister.objects.filter(
+            operation_type=CashRegister.CASH_OPEN,
             date__range=(start_of_day, end_of_day),
-            status=True
-        ).order_by('-date').first()
+            status=True,
+            user=request.user
+        ).first()
         
-        if not last_movement:
-            messages.error(request, 'No hay caja abierta para cerrar.')
+        if not open_register:
+            messages.error(request, 'No hay ninguna caja abierta hoy para cerrar.')
             return redirect('sales:cash_register')
         
-        current_balance = last_movement.current_balance
+        try:
+            real_amount = Decimal(real_amount) if real_amount else open_register.current_balance
+        except (InvalidOperation, TypeError):
+            messages.error(request, 'Monto real inválido.')
+            return redirect('sales:cash_register')
         
-        # Crear registro de cierre
-        cash_register = CashRegister(
-        operation_type=CashRegister.CASH_CLOSE,
-        amount=current_balance,  # Este monto es solo informativo
-        user=request.user,
-        description='Cierre de caja diario',
-        current_balance=current_balance,  # ← Este es el saldo final real
+        theoretical_balance = open_register.current_balance
+        difference = real_amount - theoretical_balance
+        
+        # Crear cierre de caja
+        CashRegister.objects.create(
+            operation_type=CashRegister.CASH_CLOSE,
+            amount=real_amount,
+            user=request.user,
+            description=f"Cierre de caja - {request.user.get_full_name() or request.user.username} | "
+                       f"Teórico: ${theoretical_balance:,.2f} | Real: ${real_amount:,.2f} | "
+                       f"Diferencia: ${difference:,.2f} | {observations}",
+            created_by=request.user,
+            status=True,
+            current_balance=real_amount
         )
-        cash_register.created_by = request.user
-        cash_register.save()
         
-        messages.success(request, f'Caja cerrada. Saldo final: ${current_balance:.2f}')
+        # Marcar apertura como cerrada
+        open_register.status = False
+        open_register.save()
+        
+        messages.success(request, f'Caja cerrada correctamente. Diferencia: ${difference:,.2f}')
         return redirect('sales:cash_register')
+
+
+class AddCashMovementView(LoginRequiredMixin, View):
+    def post(self, request):
+        # Verificar si hay caja abierta HOY
+        hoy = timezone.now().date()
+        start_of_day = timezone.make_aware(datetime.combine(hoy, datetime.min.time()))
+        end_of_day = timezone.make_aware(datetime.combine(hoy, datetime.max.time()))
+        
+        open_register = CashRegister.objects.filter(
+            operation_type=CashRegister.CASH_OPEN,
+            date__range=(start_of_day, end_of_day),
+            status=True,
+            user=request.user
+        ).exists()
+        
+        if not open_register:
+            messages.error(request, 'No hay caja abierta hoy.')
+            return redirect('sales:cash_register')
+        
+        form = CashRegisterForm(request.POST)
+        if form.is_valid():
+            movement = form.save(commit=False)
+            movement.user = request.user
+            movement.status = True
+            movement.created_by = request.user
+            
+            # Evitar abrir o cerrar desde este formulario
+            if movement.operation_type in [CashRegister.CASH_OPEN, CashRegister.CASH_CLOSE]:
+                messages.error(request, 'No puedes abrir o cerrar caja desde este formulario.')
+                return redirect('sales:cash_register')
+            
+            movement.save()
+            messages.success(request, 'Movimiento agregado correctamente.')
+        else:
+            messages.error(request, 'Error en el formulario.')
+        
+        return redirect('sales:cash_register')
+
+
+class ForceOpenCashRegisterView(LoginRequiredMixin, View):
+    """Vista para forzar apertura cuando ya existe caja cerrada hoy"""
+    def post(self, request):
+        amount = request.POST.get('amount', '0')
+        
+        try:
+            amount = Decimal(amount)
+            if amount < 0:
+                raise ValueError()
+            
+            hoy = timezone.now().date()
+            start_of_day = timezone.make_aware(datetime.combine(hoy, datetime.min.time()))
+            end_of_day = timezone.make_aware(datetime.combine(hoy, datetime.max.time()))
+            
+            # Cerrar cualquier caja abierta de días anteriores
+            self.close_old_cash_registers(request.user)
+            
+            # Buscar caja cerrada hoy
+            closed_cash_today = CashRegister.objects.filter(
+                operation_type=CashRegister.CASH_OPEN,
+                date__range=(start_of_day, end_of_day),
+                status=False,
+                user=request.user
+            ).first()
+            
+            if closed_cash_today:
+                # Cambiar la existente a abierta
+                closed_cash_today.status = True
+                closed_cash_today.amount = amount
+                closed_cash_today.current_balance = amount
+                closed_cash_today.save()
+                messages.success(request, f'Caja reabierta con ${amount:,.2f}')
+            else:
+                # Crear nueva
+                CashRegister.objects.create(
+                    operation_type=CashRegister.CASH_OPEN,
+                    amount=amount,
+                    user=request.user,
+                    description=f"Apertura forzada - {request.user.username}",
+                    created_by=request.user,
+                    status=True,
+                    current_balance=amount
+                )
+                messages.success(request, f'Caja abierta con ${amount:,.2f}')
+            
+            return redirect('sales:cash_register')
+            
+        except Exception as e:
+            messages.error(request, f'Error: {str(e)}')
+            return redirect('sales:cash_register')
     
+    def close_old_cash_registers(self, user):
+        """Cierra automáticamente cajas abiertas de días anteriores"""
+        hoy = timezone.now().date()
+        start_of_day = timezone.make_aware(datetime.combine(hoy, datetime.min.time()))
+        
+        # Encontrar y cerrar cajas abiertas de días anteriores
+        old_open_cash = CashRegister.objects.filter(
+            operation_type=CashRegister.CASH_OPEN,
+            date__lt=start_of_day,
+            status=True,
+            user=user
+        )
+        
+        for cash in old_open_cash:
+            cash.status = False
+            cash.save()
+            
+            # Registrar cierre automático
+            CashRegister.objects.create(
+                operation_type=CashRegister.CASH_CLOSE,
+                amount=cash.current_balance,
+                user=user,
+                description=f"Cierre automático - caja del {cash.date.date()}",
+                current_balance=cash.current_balance,
+                created_by=user
+            )
+
+
 class BudgetCreateView(LoginRequiredMixin, View):
     def get(self, request):
         template_name = "sales/budget.html"

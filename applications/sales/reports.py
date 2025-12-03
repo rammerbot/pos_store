@@ -10,6 +10,7 @@ from django.db.models import Sum, Q, Count, Avg
 from django.utils import timezone
 from django.db.models.functions import TruncMonth
 from django.db import models
+from decimal import Decimal
 
 from xhtml2pdf import pisa
 
@@ -340,8 +341,9 @@ def generate_budget_pdf(request):
     
     return redirect('sales:create_budget')
 
+
 def daily_sales_report_to_pdf(request):
-    """Generar PDF del informe diario de ventas"""
+    """Generar PDF del informe diario de ventas con DETALLES COMPLETOS"""
     template_path = 'sales/daily_sales_report.html'
     
     # Obtener la fecha del request o usar hoy por defecto
@@ -357,29 +359,41 @@ def daily_sales_report_to_pdf(request):
     now = datetime.now()
     
     # Filtrar ventas de la fecha seleccionada
-    sales_today = Sale.objects.filter(date=selected_date, status=True)
+    sales_today = Sale.objects.filter(
+        date__date=selected_date, 
+        status=True
+    ).order_by('date')
     
-    # Obtener información de caja del día seleccionado
+    # Obtener información de caja del día seleccionado con DETALLES
     start_of_day = datetime.combine(selected_date, datetime.min.time())
     end_of_day = datetime.combine(selected_date, datetime.max.time())
     
+    # Movimientos de caja del día (todos)
     cash_movements = CashRegister.objects.filter(
-        date__range=(start_of_day, end_of_day), 
-        status=True
-    )
-    opening_balance = cash_movements.filter(operation_type=CashRegister.CASH_OPEN).aggregate(Sum('amount'))['amount__sum'] or 0
-    cash_ins = cash_movements.filter(operation_type=CashRegister.CASH_IN).aggregate(Sum('amount'))['amount__sum'] or 0
-    cash_outs = cash_movements.filter(operation_type=CashRegister.CASH_OUT).aggregate(Sum('amount'))['amount__sum'] or 0
+        date__range=(start_of_day, end_of_day)
+    ).order_by('date')
+    
+    # Movimientos específicos por tipo
+    opening_movements = cash_movements.filter(operation_type=CashRegister.CASH_OPEN)
+    closing_movements = cash_movements.filter(operation_type=CashRegister.CASH_CLOSE)
+    cash_in_movements = cash_movements.filter(operation_type=CashRegister.CASH_IN)
+    cash_out_movements = cash_movements.filter(operation_type=CashRegister.CASH_OUT)
+    
+    # Calcular totales
+    opening_balance = opening_movements.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+    cash_ins = cash_in_movements.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+    cash_outs = cash_out_movements.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
     
     # Obtener último saldo registrado
-    last_movement = cash_movements.order_by('-date').first()
-    current_balance = last_movement.current_balance if last_movement else 0
+    last_movement = cash_movements.order_by('-date', '-id').first()
+    current_balance = last_movement.current_balance if last_movement else Decimal('0.00')
     
     # Calcular diferencia en caja
-    expected_balance = opening_balance + (sales_today.aggregate(Sum('total_amount'))['total_amount__sum'] or 0) + cash_ins - cash_outs
+    total_sales_today = sales_today.aggregate(Sum('total_amount'))['total_amount__sum'] or Decimal('0.00')
+    expected_balance = opening_balance + total_sales_today + cash_ins - cash_outs
     cash_difference = current_balance - expected_balance
     
-    # Calcular totales del día
+    # Calcular totales de ventas del día
     daily_totals = sales_today.aggregate(
         total_sum=Sum('total_amount'),
         subtotal_sum=Sum('subtotal'),
@@ -440,6 +454,23 @@ def daily_sales_report_to_pdf(request):
         cantidad_compras=Count('id')
     ).order_by('-total_compras')[:5]
     
+    # DETALLES DE CIERRES DE CAJA DEL DÍA
+    cash_close_details = []
+    for close_movement in closing_movements:
+        # Buscar la apertura correspondiente
+        opening_before_close = opening_movements.filter(
+            date__lt=close_movement.date
+        ).order_by('-date').first()
+        
+        cash_close_details.append({
+            'close_movement': close_movement,
+            'opening_reference': opening_before_close,
+            'description': close_movement.description,
+            'amount': close_movement.amount,
+            'date': close_movement.date,
+            'user': close_movement.user
+        })
+    
     # Guardar registro del informe
     if sales_today.exists() or cash_movements.exists():
         total_products_sold = products_sold_today.aggregate(Sum('total_quantity'))['total_quantity__sum'] or 0
@@ -449,24 +480,30 @@ def daily_sales_report_to_pdf(request):
                 report_date=selected_date,
                 defaults={
                     'generated_by': request.user,
-                    'total_sales': daily_totals['total_sum'] or 0,
+                    'total_sales': daily_totals['total_sum'] or Decimal('0.00'),
                     'total_customers': sales_today.values('customer').distinct().count(),
                     'total_products_sold': total_products_sold,
                     'opening_balance': opening_balance,
                     'closing_balance': current_balance,
                     'cash_difference': cash_difference,
+                    'cash_movements_count': cash_movements.count(),
+                    'cash_close_count': closing_movements.count(),
+                    'observations': f"Reporte generado el {now.strftime('%d/%m/%Y %H:%M:%S')}",
                     'created_by': request.user,
                 }
             )
             
             if not created:
                 daily_report.generated_by = request.user
-                daily_report.total_sales = daily_totals['total_sum'] or 0
+                daily_report.total_sales = daily_totals['total_sum'] or Decimal('0.00')
                 daily_report.total_customers = sales_today.values('customer').distinct().count()
                 daily_report.total_products_sold = total_products_sold
                 daily_report.opening_balance = opening_balance
                 daily_report.closing_balance = current_balance
                 daily_report.cash_difference = cash_difference
+                daily_report.cash_movements_count = cash_movements.count()
+                daily_report.cash_close_count = closing_movements.count()
+                daily_report.observations = f"Reporte actualizado el {now.strftime('%d/%m/%Y %H:%M:%S')}"
                 daily_report.modified_by = request.user.id
                 daily_report.save()
                 
@@ -474,31 +511,50 @@ def daily_sales_report_to_pdf(request):
             print(f"Error al guardar DailyReport: {e}")
     
     context = {
+        # Ventas
         'sales_today': sales_today,
         'products_sold_today': products_sold_today,
         'top_products_today': top_products_today,
         'top_customers_today': top_customers_today,
         'supplier_summary': supplier_summary,
         'total_products_summary': total_products_summary,
-        'today': selected_date,  # Usar la fecha seleccionada
-        'selected_date': selected_date,  # Nueva variable para el template
+        
+        # Caja - Detalles
+        'cash_movements': cash_movements,
+        'opening_movements': opening_movements,
+        'closing_movements': closing_movements,
+        'cash_in_movements': cash_in_movements,
+        'cash_out_movements': cash_out_movements,
+        'cash_close_details': cash_close_details,
+        
+        # Totales
+        'today': selected_date,
+        'selected_date': selected_date,
         'now': now,
-        'total_general': daily_totals['total_sum'] or 0,
-        'subtotal_general': daily_totals['subtotal_sum'] or 0,
-        'discount_general': daily_totals['discount_sum'] or 0,
-        'tax_general': daily_totals['tax_sum'] or 0,
+        'total_general': daily_totals['total_sum'] or Decimal('0.00'),
+        'subtotal_general': daily_totals['subtotal_sum'] or Decimal('0.00'),
+        'discount_general': daily_totals['discount_sum'] or Decimal('0.00'),
+        'tax_general': daily_totals['tax_sum'] or Decimal('0.00'),
         'count_sales': daily_totals['count_sales'] or 0,
-        'avg_sale_value': daily_totals['total_sum'] / daily_totals['count_sales'] if daily_totals['count_sales'] > 0 else 0,
+        'avg_sale_value': daily_totals['total_sum'] / daily_totals['count_sales'] if daily_totals['count_sales'] > 0 else Decimal('0.00'),
+        
+        # Control de Caja
         'opening_balance': opening_balance,
         'cash_ins': cash_ins,
         'cash_outs': cash_outs,
         'current_balance': current_balance,
         'cash_difference': cash_difference,
-        'cash_movements': cash_movements,
+        'total_sales_today': total_sales_today,
+        'expected_balance': expected_balance,
+        
+        # Estadísticas adicionales
+        'total_cash_movements': cash_movements.count(),
+        'has_cash_openings': opening_movements.exists(),
+        'has_cash_closings': closing_movements.exists(),
     }
 
     response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'inline; filename="reporte_ventas_diario_{selected_date}.pdf"'
+    response['Content-Disposition'] = f'inline; filename="reporte_diario_completo_{selected_date}.pdf"'
     template = get_template(template_path)
     html = template.render(context)
     
@@ -511,4 +567,90 @@ def daily_sales_report_to_pdf(request):
     if pisa_status.err:
        return HttpResponse('We had some errors <pre>' + html + '</pre>')
 
+    return response
+
+
+def cash_register_report_to_pdf(request):
+    """Reporte específico de caja con todos los detalles"""
+    template_path = 'sales/cash_register_report.html'
+    
+    # Obtener la fecha del request o usar hoy por defecto
+    date_param = request.GET.get('date')
+    if date_param:
+        try:
+            selected_date = datetime.strptime(date_param, '%Y-%m-%d').date()
+        except ValueError:
+            selected_date = datetime.now().date()
+    else:
+        selected_date = datetime.now().date()
+    
+    now = datetime.now()
+    
+    # Obtener información de caja del día seleccionado
+    start_of_day = datetime.combine(selected_date, datetime.min.time())
+    end_of_day = datetime.combine(selected_date, datetime.max.time())
+    
+    # Todos los movimientos del día ordenados por fecha
+    cash_movements = CashRegister.objects.filter(
+        date__range=(start_of_day, end_of_day)
+    ).order_by('date', 'id')
+    
+    # Agrupar movimientos por tipo
+    opening_movements = cash_movements.filter(operation_type=CashRegister.CASH_OPEN)
+    closing_movements = cash_movements.filter(operation_type=CashRegister.CASH_CLOSE)
+    cash_in_movements = cash_movements.filter(operation_type=CashRegister.CASH_IN)
+    cash_out_movements = cash_movements.filter(operation_type=CashRegister.CASH_OUT)
+    
+    # Calcular totales
+    opening_balance = opening_movements.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+    cash_ins = cash_in_movements.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+    cash_outs = cash_out_movements.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+    
+    # Obtener último saldo
+    last_movement = cash_movements.order_by('-date', '-id').first()
+    current_balance = last_movement.current_balance if last_movement else Decimal('0.00')
+    
+    # Obtener ventas del día para el cálculo teórico
+    sales_today = Sale.objects.filter(
+        date__date=selected_date,
+        status=True
+    )
+    total_sales_today = sales_today.aggregate(Sum('total_amount'))['total_amount__sum'] or Decimal('0.00')
+    
+    # Calcular diferencia
+    expected_balance = opening_balance + total_sales_today + cash_ins - cash_outs
+    cash_difference = current_balance - expected_balance
+    
+    context = {
+        'selected_date': selected_date,
+        'now': now,
+        'cash_movements': cash_movements,
+        'opening_movements': opening_movements,
+        'closing_movements': closing_movements,
+        'cash_in_movements': cash_in_movements,
+        'cash_out_movements': cash_out_movements,
+        'opening_balance': opening_balance,
+        'cash_ins': cash_ins,
+        'cash_outs': cash_outs,
+        'current_balance': current_balance,
+        'total_sales_today': total_sales_today,
+        'expected_balance': expected_balance,
+        'cash_difference': cash_difference,
+        'total_movements': cash_movements.count(),
+    }
+    
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="reporte_caja_{selected_date}.pdf"'
+    template = get_template(template_path)
+    html = template.render(context)
+    
+    pisa_status = pisa.CreatePDF(
+       html,
+       dest=response,
+       link_callback=link_callback,
+    )
+    
+    if pisa_status.err:
+       return HttpResponse('We had some errors <pre>' + html + '</pre>')
+    
     return response

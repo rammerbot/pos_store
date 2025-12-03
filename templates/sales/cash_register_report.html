@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Reporte Específico de Caja</title>
+    <style>
+        @page {
+            size: letter;
+            margin: 1cm;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 10px;
+            line-height: 1.3;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .company-name {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+        .report-title {
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        .date-info {
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            font-size: 9px;
+        }
+        th, td {
+            border: 1px solid #333;
+            padding: 4px;
+            text-align: left;
+        }
+        th {
+            background-color: #e9ecef;
+            font-weight: bold;
+        }
+        .section-title {
+            font-size: 12px;
+            font-weight: bold;
+            margin: 10px 0 5px 0;
+            border-bottom: 1px solid #333;
+            padding-bottom: 3px;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .total-row {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .movement-open { background-color: #d4edda; }
+        .movement-close { background-color: #f8d7da; }
+        .movement-in { background-color: #d1ecf1; }
+        .movement-out { background-color: #fff3cd; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="company-name">RAMMERBOT INVENTORY SYSTEM</div>
+        <div class="report-title">REPORTE DETALLADO DE CAJA</div>
+        <div class="date-info">Fecha: {{ selected_date|date:"l, d \\d\\e F \\d\\e Y" }}</div>
+        <div class="date-info">Generado el: {{ now|date:"d/m/Y H:i:s" }}</div>
+    </div>
+
+    <!-- RESUMEN DE CAJA -->
+    <div class="section-title">RESUMEN DE CAJA</div>
+    <table>
+        <tr>
+            <td width="50%"><strong>Saldo Inicial:</strong></td>
+            <td width="50%" class="text-right">${{ opening_balance|floatformat:2 }}</td>
+        </tr>
+        <tr>
+            <td><strong>Ventas del Día:</strong></td>
+            <td class="text-right">${{ total_sales_today|floatformat:2 }}</td>
+        </tr>
+        <tr>
+            <td><strong>Ingresos de Caja:</strong></td>
+            <td class="text-right">${{ cash_ins|floatformat:2 }}</td>
+        </tr>
+        <tr>
+            <td><strong>Retiros de Caja:</strong></td>
+            <td class="text-right">${{ cash_outs|floatformat:2 }}</td>
+        </tr>
+        <tr class="total-row">
+            <td><strong>Saldo Esperado:</strong></td>
+            <td class="text-right"><strong>${{ expected_balance|floatformat:2 }}</strong></td>
+        </tr>
+        <tr class="total-row">
+            <td><strong>Saldo Real:</strong></td>
+            <td class="text-right"><strong>${{ current_balance|floatformat:2 }}</strong></td>
+        </tr>
+        <tr class="total-row">
+            <td><strong>Diferencia:</strong></td>
+            <td class="text-right">
+                <strong style="color: {% if cash_difference >= 0 %}#28a745{% else %}#dc3545{% endif %};">
+                    ${{ cash_difference|floatformat:2 }}
+                </strong>
+            </td>
+        </tr>
+    </table>
+
+    <!-- MOVIMIENTOS DETALLADOS -->
+    <div class="section-title">MOVIMIENTOS DETALLADOS ({{ total_movimientos }})</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Hora</th>
+                <th>Tipo</th>
+                <th>Descripción</th>
+                <th class="text-right">Monto</th>
+                <th class="text-right">Saldo</th>
+                <th>Usuario</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for movement in cash_movements %}
+            <tr class="movement-{{ movement.operation_type }}">
+                <td>{{ movement.date|date:"H:i:s" }}</td>
+                <td>{{ movement.get_operation_type_display }}</td>
+                <td>{{ movement.description|default:"-"|truncatechars:30 }}</td>
+                <td class="text-right">
+                    {% if movement.operation_type == 'in' or movement.operation_type == 'open' %}
+                    <span style="color: #28a745;">+ ${{ movement.amount|floatformat:2 }}</span>
+                    {% elif movement.operation_type == 'out' %}
+                    <span style="color: #dc3545;">- ${{ movement.amount|floatformat:2 }}</span>
+                    {% else %}
+                    ${{ movement.amount|floatformat:2 }}
+                    {% endif %}
+                </td>
+                <td class="text-right">${{ movement.current_balance|floatformat:2 }}</td>
+                <td>{{ movement.user.get_full_name|default:movement.user.username }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="text-center">No hay movimientos registrados</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- APERTURAS DE CAJA -->
+    {% if opening_movements %}
+    <div class="section-title">APERTURAS DE CAJA ({{ opening_movements.count }})</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Hora</th>
+                <th>Monto</th>
+                <th>Descripción</th>
+                <th>Usuario</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for movement in opening_movements %}
+            <tr class="movement-open">
+                <td>{{ movement.date|date:"H:i:s" }}</td>
+                <td class="text-right">${{ movement.amount|floatformat:2 }}</td>
+                <td>{{ movement.description|default:"-"|truncatechars:30 }}</td>
+                <td>{{ movement.user.get_full_name|default:movement.user.username }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    <!-- CIERRES DE CAJA -->
+    {% if closing_movements %}
+    <div class="section-title">CIERRES DE CAJA ({{ closing_movements.count }})</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Hora</th>
+                <th>Monto</th>
+                <th>Descripción</th>
+                <th>Usuario</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for movement in closing_movements %}
+            <tr class="movement-close">
+                <td>{{ movement.date|date:"H:i:s" }}</td>
+                <td class="text-right">${{ movement.amount|floatformat:2 }}</td>
+                <td>{{ movement.description|default:"-"|truncatechars:40 }}</td>
+                <td>{{ movement.user.get_full_name|default:movement.user.username }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    <!-- INGRESOS DE EFECTIVO -->
+    {% if cash_in_movements %}
+    <div class="section-title">INGRESOS DE EFECTIVO ({{ cash_in_movements.count }})</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Hora</th>
+                <th class="text-right">Monto</th>
+                <th>Descripción</th>
+                <th>Usuario</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for movement in cash_in_movements %}
+            <tr class="movement-in">
+                <td>{{ movement.date|date:"H:i:s" }}</td>
+                <td class="text-right" style="color: #28a745;">+ ${{ movement.amount|floatformat:2 }}</td>
+                <td>{{ movement.description|default:"-"|truncatechars:30 }}</td>
+                <td>{{ movement.user.get_full_name|default:movement.user.username }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    <!-- RETIROS DE EFECTIVO -->
+    {% if cash_out_movements %}
+    <div class="section-title">RETIROS DE EFECTIVO ({{ cash_out_movements.count }})</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Hora</th>
+                <th class="text-right">Monto</th>
+                <th>Descripción</th>
+                <th>Usuario</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for movement in cash_out_movements %}
+            <tr class="movement-out">
+                <td>{{ movement.date|date:"H:i:s" }}</td>
+                <td class="text-right" style="color: #dc3545;">- ${{ movement.amount|floatformat:2 }}</td>
+                <td>{{ movement.description|default:"-"|truncatechars:30 }}</td>
+                <td>{{ movement.user.get_full_name|default:movement.user.username }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    <div style="margin-top: 20px; border-top: 1px solid #333; padding-top: 5px; font-size: 8px; text-align: center;">
+        Reporte de Caja Generado el {{ now|date:"d/m/Y H:i:s" }} | RammerBot Inventory System
+    </div>
+</body>
+</html>

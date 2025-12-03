@@ -45,32 +45,35 @@ class CashRegister(BaseModel):
     def __str__(self):
         return f'{self.get_operation_type_display()} - ${self.amount} - {self.date.strftime("%d/%m/%Y %H:%M")}'
 
+    # applications/sales/models.py → dentro de CashRegister
+    # models.py → dentro de CashRegister
     def save(self, *args, **kwargs):
         if not self.created_by_id and hasattr(self, '_current_user'):
             self.created_by = self._current_user
 
-        if not self.pk:  # Solo al crear
-            today = timezone.now().date()
-
-            # Último movimiento ANTERIOR al actual
-            previous = CashRegister.objects.filter(
-                date__date=today,
+        # === NUEVA LÓGICA CLAVE: al abrir caja, cerrar la anterior ===
+        if self.operation_type == CashRegister.CASH_OPEN and not self.pk:
+            # Cerrar cualquier apertura anterior que quedó abierta
+            CashRegister.objects.filter(
+                operation_type=CashRegister.CASH_OPEN,
                 status=True
-            ).order_by('-date', '-id').first()
+            ).update(status=False)
 
+        if not self.pk:  # Solo al crear
+            # Buscar el último movimiento con status=True (puede ser de ayer o de otro turno)
+            previous = CashRegister.objects.filter(status=True).order_by('-date', '-id').first()
             base_balance = previous.current_balance if previous else Decimal('0.00')
 
-            if self.operation_type == self.CASH_OPEN:
-                self.current_balance = self.amount
-            elif self.operation_type == self.CASH_IN:
+            if self.operation_type == CashRegister.CASH_OPEN:
+                self.current_balance = self.amount  # Saldo inicial del turno
+            elif self.operation_type == CashRegister.CASH_IN:
                 self.current_balance = float(base_balance) + float(self.amount)
-            elif self.operation_type == self.CASH_OUT:
-                self.current_balance = float(base_balance) - float(self.amount)
-            elif self.operation_type == self.CASH_CLOSE:
-                self.current_balance = base_balance
+            elif self.operation_type == CashRegister.CASH_OUT:
+                self.current_balance =float(base_balance) - float(self.amount)
+            elif self.operation_type == CashRegister.CASH_CLOSE:
+                self.current_balance = float(base_balance)  # El cierre NO resetea, solo registra
 
         super().save(*args, **kwargs)
-
 
 class ControlSequence(models.Model):
     name = models.CharField(max_length=100, unique=True)
